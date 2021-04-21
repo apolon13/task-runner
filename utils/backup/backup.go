@@ -1,16 +1,15 @@
 package backup
 
 import (
-	"backup-downloader/config"
-	"backup-downloader/downloader/sftp"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"os/exec"
 	"strings"
+	"task-runner/config"
+	"task-runner/downloader/sftp"
 )
-
 
 func Do(df *sftp.DownloadFile, cnf config.Yaml, db string) {
 	fmt.Println(fmt.Sprintf("Download file - %s", df.FileName))

@@ -24,10 +24,10 @@ type Yaml struct {
 	Build struct {
 		Frontend struct {
 			Root        string   `yaml:"root"`
-			ClearPath string   `yaml:"clear-path"`
+			CutExecPath string   `yaml:"cut-exec-path"`
 			Parallel    int      `yaml:"parallel"`
 			Recursive   []string `yaml:"recursive"`
-			IfExistFile string   `yaml:"if-exist-file"`
+			CheckFile   string   `yaml:"check-file"`
 			Command     struct {
 				Main string   `yaml:"main"`
 				Args []string `yaml:"args"`

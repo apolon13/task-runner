@@ -1,17 +1,17 @@
 package main
 
 import (
-	"backup-downloader/config"
-	"backup-downloader/connection/ssh"
-	"backup-downloader/downloader/sftp"
-	"backup-downloader/utils/backup"
-	"backup-downloader/utils/builder/frontend"
 	"flag"
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"os"
+	"task-runner/config"
+	"task-runner/connection/ssh"
+	"task-runner/downloader/sftp"
+	"task-runner/utils/backup"
+	"task-runner/utils/builder/frontend"
 )
 
 func buildConfig(path string) config.Yaml {
@@ -28,13 +28,15 @@ func buildConfig(path string) config.Yaml {
 }
 
 func main() {
+	wd, _ := os.Getwd()
+	defaultConfigFile := wd + "/config.yaml"
 	backupCmd := flag.NewFlagSet("backup", flag.ExitOnError)
-	backupCnf := backupCmd.String("cnf", "", "config file path")
+	backupCnf := backupCmd.String("cnf", defaultConfigFile, "config file path")
 	f := backupCmd.String("f", "", "backup file name")
 	db := backupCmd.String("db", "", "database")
 
 	buildFrontendCmd := flag.NewFlagSet("build-frontend", flag.ExitOnError)
-	buildFrontendCnf := buildFrontendCmd.String("cnf", "", "config file path")
+	buildFrontendCnf := buildFrontendCmd.String("cnf", defaultConfigFile, "config file path")
 	mode := buildFrontendCmd.String("mode", "production", "production or development")
 
 	switch os.Args[1] {
@@ -63,7 +65,7 @@ func main() {
 		_ = buildFrontendCmd.Parse(os.Args[2:])
 		yamlFile := buildConfig(*buildFrontendCnf)
 		frontend.Do(frontend.BuildParams{
-			Cnf: yamlFile,
+			Cnf:  yamlFile,
 			Mode: *mode,
 		})
 	case "-h":

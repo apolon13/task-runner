@@ -1,7 +1,6 @@
 package frontend
 
 import (
-	"backup-downloader/config"
 	"bufio"
 	"fmt"
 	"io/ioutil"
@@ -10,6 +9,7 @@ import (
 	"os/exec"
 	"strings"
 	"sync"
+	"task-runner/config"
 	"time"
 )
 
@@ -38,47 +38,52 @@ func Do(bp BuildParams) {
 	start := time.Now()
 	sem := make(chan struct{}, bp.Cnf.Build.Frontend.Parallel)
 	processChannels := make(chan buildProcess)
-	fmt.Println("root directory - " + bp.Cnf.Build.Frontend.Root)
-	files, err := ioutil.ReadDir(bp.Cnf.Build.Frontend.Root)
+	rootDir := bp.Cnf.Build.Frontend.Root
+	fmt.Println("root directory - " + rootDir)
+	files, err := ioutil.ReadDir(rootDir)
 	if err != nil {
 		log.Fatal(err)
 	}
+	var dirNames []string
+	for _, file := range files {
+		if file.IsDir() {
+			dirNames = append(dirNames, file.Name())
+		}
+	}
 	go func() {
 		var waitGroup sync.WaitGroup
-		for _, file := range files {
-			if file.IsDir() {
-				filePath := buildThreeComponentPath(bp.Cnf.Build.Frontend.Root, file.Name(), bp.Cnf.Build.Frontend.IfExistFile)
-				if _, err := os.Stat(filePath); err == nil {
-					fmt.Println("add building process -" + file.Name())
-					waitGroup.Add(1)
-					fullPath := bp.Cnf.Build.Frontend.Root + "/" + file.Name()
-					replacedFullPath := strings.ReplaceAll(fullPath, bp.Cnf.Build.Frontend.ClearPath, "")
-					processChannels <- buildProcess{
-						replacedFullPath,
-						bp.Mode,
-						&waitGroup,
-						command{
-							main: bp.Cnf.Build.Frontend.Command.Main,
-							args: bp.Cnf.Build.Frontend.Command.Args,
-						},
-					}
+		for _, name := range dirNames {
+			filePath := buildThreeComponentPath(rootDir, name, bp.Cnf.Build.Frontend.CheckFile)
+			if _, err := os.Stat(filePath); err == nil {
+				fmt.Println("add building process -" + name)
+				waitGroup.Add(1)
+				fp := bp.Cnf.Build.Frontend.Root + "/" + name
+				cutExec := bp.Cnf.Build.Frontend.CutExecPath
+				replacedFullPath := strings.ReplaceAll(fp, cutExec, "")
+				processChannels <- buildProcess{
+					replacedFullPath,
+					bp.Mode,
+					&waitGroup,
+					command{
+						main: bp.Cnf.Build.Frontend.Command.Main,
+						args: bp.Cnf.Build.Frontend.Command.Args,
+					},
 				}
-				if len(bp.Cnf.Build.Frontend.Recursive) > 0 {
-					for _, recursiveDir := range bp.Cnf.Build.Frontend.Recursive {
-						recursive := buildThreeComponentPath(bp.Cnf.Build.Frontend.Root, file.Name(), recursiveDir)
-						recursive = strings.ReplaceAll(recursive, recursiveDir + "/" + recursiveDir, recursiveDir)
-						if _, err := os.Stat(recursive); err == nil {
-							cnf := bp.Cnf
-							cnf.Build.Frontend.Root = recursive
-							Do(BuildParams{
-								Cnf: cnf,
-								Mode: bp.Mode,
-							})
-						}
+			}
+			if len(bp.Cnf.Build.Frontend.Recursive) > 0 {
+				for _, recursiveDir := range bp.Cnf.Build.Frontend.Recursive {
+					recursive := buildThreeComponentPath(rootDir, name, recursiveDir)
+					recursive = strings.ReplaceAll(recursive, recursiveDir+"/"+recursiveDir, recursiveDir)
+					if _, err := os.Stat(recursive); err == nil {
+						cnf := bp.Cnf
+						cnf.Build.Frontend.Root = recursive
+						Do(BuildParams{
+							Cnf:  cnf,
+							Mode: bp.Mode,
+						})
 					}
 				}
 			}
-
 		}
 		waitGroup.Wait()
 		close(processChannels)
