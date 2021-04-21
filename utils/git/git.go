@@ -30,6 +30,11 @@ func Release(release *config.Branch, cnf config.Yaml) error {
 			}
 			last = &intermediate
 		}
+		if last != nil {
+			return doRelease(last.Name, "master", func() error {
+				return nil
+			}, false)
+		}
 	}
 	if release.Name == "master" {
 		return pushTo(release.Name)
