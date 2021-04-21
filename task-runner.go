@@ -96,6 +96,9 @@ func main() {
 		if branch == "current" {
 			branch, _ = gitUtil.CurrentBranch()
 		}
+		if *testStand == "" {
+			log.Fatal("Test stand missing")
+		}
 		gitUtil.Deploy(
 			&config.Branch{Name: *testStand},
 			*testStand)

@@ -27,7 +27,7 @@ func handleGitCommand(out string, err error) {
 func Deploy(deploy *config.Branch, testStand string) {
 	handleGitCommand(git.Pull(pull.Repository("origin"), pull.Repository("master"), git.Debug))
 	handleGitCommand(git.Checkout(checkout.Branch(testStand), git.Debug))
-	handleGitCommand(git.Reset(reset.Hard, reset.Path("origin", "master"), git.Debug))
+	handleGitCommand(git.Reset(reset.Hard, reset.Path("origin/master"), git.Debug))
 	handleGitCommand(git.Checkout(checkout.Branch(deploy.Name), git.Debug))
 	handleGitCommand(git.Rebase(rebase.Branch(testStand), git.Debug))
 	handleGitCommand(git.Checkout(checkout.Branch(testStand), git.Debug))
