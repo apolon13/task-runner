@@ -101,6 +101,5 @@ func handlePrc(prc buildProcess, sem chan struct{}) error {
 	}
 	args = append(args, prc.dir)
 	prc.Command.Args = args
-	args = append(args, prc.dir)
 	return cmd.Handle(prc.Command)
 }
