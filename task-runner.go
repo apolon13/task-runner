@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 	"task-runner/config"
 	"task-runner/connection/ssh"
 	"task-runner/downloader/sftp"
@@ -78,8 +79,7 @@ func main() {
 		if branch == "current" {
 			branch, _ = gitUtil.CurrentBranch()
 		}
-		fmt.Println(buildConfig(*releaseCnf))
-		gitUtil.Release(&config.Branch{Name: branch}, buildConfig(*releaseCnf))
+		gitUtil.Release(&config.Branch{Name: strings.Trim(branch, "\n")}, buildConfig(*releaseCnf))
 	case "-h":
 		fmt.Println("Usage: task-runner " + backupCmd.Name())
 		backupCmd.PrintDefaults()
