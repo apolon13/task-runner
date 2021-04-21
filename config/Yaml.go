@@ -1,14 +1,14 @@
 package config
 
-type Command struct {
-	Main string   `yaml:"main"`
-	Args []string `yaml:"args"`
-}
-
 type Branch struct {
 	Name    string  `yaml:"name"`
 	Amend   bool    `yaml:"amend"`
 	Command Command `yaml:"command"`
+}
+
+type Command struct {
+	Main string   `yaml:"main"`
+	Args []string `yaml:"args"`
 }
 
 type Yaml struct {
@@ -40,6 +40,8 @@ type Yaml struct {
 		}
 	}
 	Git struct {
-		Intermediate []Branch `yaml:"intermediate"`
+		Release struct {
+			Intermediate []Branch `yaml:"intermediate"`
+		}
 	}
 }

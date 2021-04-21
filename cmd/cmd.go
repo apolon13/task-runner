@@ -8,8 +8,8 @@ import (
 	"task-runner/config"
 )
 
-func Handle(cnfCommand config.Command) error {
-	cmd := exec.Command(cnfCommand.Main, cnfCommand.Args...)
+func Handle(command config.Command) error {
+	cmd := exec.Command(command.Main, command.Args...)
 	if cmd.Stderr == nil {
 		cmdErrReader, err := cmd.StderrPipe()
 		errScanner := bufio.NewScanner(cmdErrReader)

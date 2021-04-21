@@ -9,99 +9,85 @@ import (
 	"github.com/ldez/go-git-cmd-wrapper/v2/pull"
 	"github.com/ldez/go-git-cmd-wrapper/v2/push"
 	"github.com/ldez/go-git-cmd-wrapper/v2/rebase"
+	"github.com/ldez/go-git-cmd-wrapper/v2/reset"
 	"github.com/ldez/go-git-cmd-wrapper/v2/revparse"
 	"strings"
 	"task-runner/cmd"
 	"task-runner/config"
 )
 
-func Release(release *config.Branch, cnf config.Yaml) error {
-	if len(cnf.Git.Intermediate) > 0 {
+func handleGitCommand(out string, err error) {
+	fmt.Println(fmt.Sprintf("Git: %s", out))
+	if err != nil {
+		panic(err)
+	}
+}
+
+func Deploy(deploy *config.Branch, testStand string) {
+	handleGitCommand(git.Pull(pull.Repository("origin"), pull.Repository("master")))
+	handleGitCommand(git.Checkout(checkout.Branch(testStand), git.Debug))
+	handleGitCommand(git.Reset(reset.Hard, reset.Path("origin", "master")))
+	handleGitCommand(git.Checkout(checkout.Branch(deploy.Name), git.Debug))
+	handleGitCommand(git.Rebase(rebase.Branch(testStand), git.Debug))
+	handleGitCommand(git.Checkout(checkout.Branch(testStand), git.Debug))
+	handleGitCommand(git.Merge(merge.Commits(deploy.Name), git.Debug))
+	handleGitCommand(git.Push(push.Force, push.Remote("origin"), push.Remote(testStand), git.Debug))
+	handleGitCommand(git.Checkout(checkout.Branch(deploy.Name), git.Debug))
+}
+
+func Release(release *config.Branch, cnf config.Yaml) {
+	if len(cnf.Git.Release.Intermediate) > 0 {
 		var last *config.Branch
-		for _, intermediate := range cnf.Git.Intermediate {
+		for _, intermediate := range cnf.Git.Release.Intermediate {
 			branchB := release
 			if last != nil {
 				branchB = last
 			}
 			if intermediate.Name != branchB.Name {
-				err := doRelease(strings.Trim(intermediate.Name, "\n"), branchB.Name, func() error {
+				doRelease(strings.Trim(intermediate.Name, "\n"), branchB.Name, func() error {
 					if intermediate.Command.Main == "" {
 						return nil
 					}
 					return cmd.Handle(intermediate.Command)
 				}, intermediate.Amend)
-				if err != nil {
-					return err
-				}
 				last = &intermediate
 			}
 		}
 		if last != nil {
-			return doRelease("master", last.Name, func() error {
+			doRelease("master", last.Name, func() error {
 				return nil
 			}, false)
+			return
 		}
 	}
 	if release.Name == "master" {
-		return pushTo(release.Name)
+		handleGitCommand(pushTo(release.Name))
+		return
 	}
-	return doRelease("master", release.Name, func() error {
+	doRelease("master", release.Name, func() error {
 		return nil
 	}, false)
 }
 
-func pushTo(branch string) error {
-	out, err := git.Push(push.Remote("origin"), push.Remote(branch), git.Debug)
-	fmt.Println(out)
-	if err != nil {
-		return err
-	}
-	return nil
+func pushTo(branch string) (string, error) {
+	return git.Push(push.Remote("origin"), push.Remote(branch), git.Debug)
 }
 
-func doRelease(branchA string, branchB string, command func() error, amend bool) error {
-	checkoutAOut, checkoutAErr := git.Checkout(checkout.Branch(branchA), git.Debug)
-
-	fmt.Println(checkoutAOut)
-	if checkoutAErr != nil {
-		return checkoutAErr
-	}
-	pullOut, pullErr := git.Pull(pull.Repository("origin"), pull.Repository(branchA))
-	fmt.Println(pullOut)
-	if pullErr != nil {
-		return pullErr
-	}
-	checkoutBOut, checkoutBErr := git.Checkout(checkout.Branch(branchB), git.Debug)
-	fmt.Println(checkoutBOut)
-	if checkoutBErr != nil {
-		return checkoutBErr
-	}
-	if err := command(); err != nil {
-		return err
+func doRelease(branchA string, branchB string, command func() error, amend bool) {
+	handleGitCommand(git.Checkout(checkout.Branch(branchA), git.Debug))
+	handleGitCommand(git.Pull(pull.Repository("origin"), pull.Repository(branchA)))
+	handleGitCommand(git.Checkout(checkout.Branch(branchB), git.Debug))
+	err := command()
+	if err != nil {
+		panic(err)
 	}
 	if amend == true {
-		commitOut, commitErr := git.Commit(commit.Amend, commit.NoEdit, git.Debug)
-		fmt.Println(commitOut)
-		if commitErr != nil {
-			return commitErr
-		}
+		handleGitCommand(git.Commit(commit.Amend, commit.NoEdit, git.Debug))
 	}
-	rebaseOut, rebaseErr := git.Rebase(rebase.Branch(branchA), git.Debug)
-	fmt.Println(rebaseOut)
-	if rebaseErr != nil {
-		return rebaseErr
-	}
-	checkoutAOut, checkoutAErr = git.Checkout(checkout.Branch(branchA), git.Debug)
-	fmt.Println(checkoutAOut)
-	if checkoutAErr != nil {
-		return checkoutAErr
-	}
-	mergeOut, mergeErr := git.Merge(merge.Commits(branchB), git.Debug)
-	fmt.Println(mergeOut)
-	if mergeErr != nil {
-		return mergeErr
-	}
-	return pushTo(branchA)
+	handleGitCommand(git.Rebase(rebase.Branch(branchA), git.Debug))
+	handleGitCommand(git.Checkout(checkout.Branch(branchA), git.Debug))
+	handleGitCommand(git.Merge(merge.Commits(branchB), git.Debug))
+	handleGitCommand(pushTo(branchA))
 }
 
 func CurrentBranch() (string, error) {

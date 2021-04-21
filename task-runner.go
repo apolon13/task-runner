@@ -45,6 +45,10 @@ func main() {
 	releaseBranch := releaseCmd.String("branch", "current", "release branch")
 	releaseCnf := releaseCmd.String("cnf", defaultConfigFile, "config file path")
 
+	deployCmd := flag.NewFlagSet("deploy", flag.ExitOnError)
+	testStand := deployCmd.String("stand", "", "test stand")
+	deployBranch := deployCmd.String("branch", "current", "deploy branch")
+
 	switch os.Args[1] {
 	case "backup":
 		_ = backupCmd.Parse(os.Args[2:])
@@ -83,10 +87,18 @@ func main() {
 		if branch == "current" {
 			branch, _ = gitUtil.CurrentBranch()
 		}
-		err := gitUtil.Release(&config.Branch{Name: strings.Trim(branch, "\n")}, buildConfig(*releaseCnf))
-		if err != nil {
-			log.Fatal(err)
+		gitUtil.Release(
+			&config.Branch{Name: strings.Trim(branch, "\n")},
+			buildConfig(*releaseCnf))
+	case "deploy":
+		_ = deployCmd.Parse(os.Args[2:])
+		branch := *deployBranch
+		if branch == "current" {
+			branch, _ = gitUtil.CurrentBranch()
 		}
+		gitUtil.Deploy(
+			&config.Branch{Name: *testStand},
+			*testStand)
 	case "-h":
 		fmt.Println("Usage: task-runner " + backupCmd.Name())
 		backupCmd.PrintDefaults()
@@ -94,6 +106,8 @@ func main() {
 		buildFrontendCmd.PrintDefaults()
 		fmt.Println("Usage: task-runner " + releaseCmd.Name())
 		releaseCmd.PrintDefaults()
+		fmt.Println("Usage: task-runner " + deployCmd.Name())
+		deployCmd.PrintDefaults()
 		os.Exit(2)
 	default:
 		fmt.Println("Undefined subcommand")
