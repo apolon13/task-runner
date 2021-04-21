@@ -50,6 +50,7 @@ func pushTo(branch string) error {
 
 func doRelease(branchA string, branchB string, command func() error, amend bool) error {
 	checkoutAOut, checkoutAErr := git.Checkout(checkout.Branch(branchA), git.Debug)
+
 	fmt.Println(checkoutAOut)
 	if checkoutAErr != nil {
 		return checkoutAErr
