@@ -22,16 +22,18 @@ func Release(release *config.Branch, cnf config.Yaml) error {
 			if last != nil {
 				branchB = last
 			}
-			err := doRelease(strings.Trim(intermediate.Name, "\n"), branchB.Name, func() error {
-				if intermediate.Command.Main == "" {
-					return nil
+			if intermediate.Name != branchB.Name {
+				err := doRelease(strings.Trim(intermediate.Name, "\n"), branchB.Name, func() error {
+					if intermediate.Command.Main == "" {
+						return nil
+					}
+					return cmd.Handle(intermediate.Command)
+				}, intermediate.Amend)
+				if err != nil {
+					return err
 				}
-				return cmd.Handle(intermediate.Command)
-			}, intermediate.Amend)
-			if err != nil {
-				return err
+				last = &intermediate
 			}
-			last = &intermediate
 		}
 		if last != nil {
 			return doRelease(last.Name, "master", func() error {
