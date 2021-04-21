@@ -78,6 +78,7 @@ func main() {
 			Mode: *mode,
 		})
 	case "release":
+		_ = releaseCmd.Parse(os.Args[2:])
 		branch := *releaseBranch
 		if branch == "current" {
 			branch, _ = gitUtil.CurrentBranch()
