@@ -36,7 +36,7 @@ func Release(release *config.Branch, cnf config.Yaml) error {
 			}
 		}
 		if last != nil {
-			return doRelease(last.Name, "master", func() error {
+			return doRelease("master", last.Name, func() error {
 				return nil
 			}, false)
 		}
@@ -44,7 +44,7 @@ func Release(release *config.Branch, cnf config.Yaml) error {
 	if release.Name == "master" {
 		return pushTo(release.Name)
 	}
-	return doRelease(release.Name, "master", func() error {
+	return doRelease("master", release.Name, func() error {
 		return nil
 	}, false)
 }
