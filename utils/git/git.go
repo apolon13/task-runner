@@ -11,6 +11,7 @@ import (
 	"github.com/ldez/go-git-cmd-wrapper/v2/rebase"
 	"github.com/ldez/go-git-cmd-wrapper/v2/reset"
 	"github.com/ldez/go-git-cmd-wrapper/v2/revparse"
+	"github.com/ldez/go-git-cmd-wrapper/v2/types"
 	"strings"
 	"task-runner/cmd"
 	"task-runner/config"
@@ -24,14 +25,14 @@ func handleGitCommand(out string, err error) {
 }
 
 func Deploy(deploy *config.Branch, testStand string) {
-	handleGitCommand(git.Pull(pull.Repository("origin"), pull.Repository("master")))
+	handleGitCommand(git.Pull(pull.Repository("origin"), pull.Repository("master"), git.Debug))
 	handleGitCommand(git.Checkout(checkout.Branch(testStand), git.Debug))
-	handleGitCommand(git.Reset(reset.Hard, reset.Path("origin", "master")))
+	handleGitCommand(git.Reset(reset.Hard, reset.Path("origin", "master"), git.Debug))
 	handleGitCommand(git.Checkout(checkout.Branch(deploy.Name), git.Debug))
 	handleGitCommand(git.Rebase(rebase.Branch(testStand), git.Debug))
 	handleGitCommand(git.Checkout(checkout.Branch(testStand), git.Debug))
 	handleGitCommand(git.Merge(merge.Commits(deploy.Name), git.Debug))
-	handleGitCommand(git.Push(push.Force, push.Remote("origin"), push.Remote(testStand), git.Debug))
+	handleGitCommand(pushTo(testStand, true))
 	handleGitCommand(git.Checkout(checkout.Branch(deploy.Name), git.Debug))
 }
 
@@ -61,7 +62,7 @@ func Release(release *config.Branch, cnf config.Yaml) {
 		}
 	}
 	if release.Name == "master" {
-		handleGitCommand(pushTo(release.Name))
+		handleGitCommand(pushTo(release.Name, false))
 		return
 	}
 	doRelease("master", release.Name, func() error {
@@ -69,13 +70,17 @@ func Release(release *config.Branch, cnf config.Yaml) {
 	}, false)
 }
 
-func pushTo(branch string) (string, error) {
-	return git.Push(push.Remote("origin"), push.Remote(branch), git.Debug)
+func pushTo(branch string, force bool) (string, error) {
+	args := []types.Option{push.Remote("origin"), push.Remote(branch), git.Debug}
+	if force {
+		args = append(args, push.Force)
+	}
+	return git.Push(args...)
 }
 
 func doRelease(branchA string, branchB string, command func() error, amend bool) {
 	handleGitCommand(git.Checkout(checkout.Branch(branchA), git.Debug))
-	handleGitCommand(git.Pull(pull.Repository("origin"), pull.Repository(branchA)))
+	handleGitCommand(git.Pull(pull.Repository("origin"), pull.Repository(branchA), git.Debug))
 	handleGitCommand(git.Checkout(checkout.Branch(branchB), git.Debug))
 	err := command()
 	if err != nil {
@@ -87,7 +92,7 @@ func doRelease(branchA string, branchB string, command func() error, amend bool)
 	handleGitCommand(git.Rebase(rebase.Branch(branchA), git.Debug))
 	handleGitCommand(git.Checkout(checkout.Branch(branchA), git.Debug))
 	handleGitCommand(git.Merge(merge.Commits(branchB), git.Debug))
-	handleGitCommand(pushTo(branchA))
+	handleGitCommand(pushTo(branchA, false))
 }
 
 func CurrentBranch() (string, error) {
