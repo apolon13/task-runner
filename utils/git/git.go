@@ -6,6 +6,7 @@ import (
 	"github.com/ldez/go-git-cmd-wrapper/v2/commit"
 	"github.com/ldez/go-git-cmd-wrapper/v2/git"
 	"github.com/ldez/go-git-cmd-wrapper/v2/merge"
+	"github.com/ldez/go-git-cmd-wrapper/v2/pull"
 	"github.com/ldez/go-git-cmd-wrapper/v2/push"
 	"github.com/ldez/go-git-cmd-wrapper/v2/rebase"
 	"github.com/ldez/go-git-cmd-wrapper/v2/revparse"
@@ -65,7 +66,7 @@ func doRelease(branchA string, branchB string, command func() error, amend bool)
 	if checkoutAErr != nil {
 		return checkoutAErr
 	}
-	pullOut, pullErr := git.Pull()
+	pullOut, pullErr := git.Pull(pull.Repository("origin"), pull.Repository(branchA))
 	fmt.Println(pullOut)
 	if pullErr != nil {
 		return pullErr
