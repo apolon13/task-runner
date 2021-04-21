@@ -9,8 +9,8 @@ import (
 	"github.com/ldez/go-git-cmd-wrapper/v2/push"
 	"github.com/ldez/go-git-cmd-wrapper/v2/rebase"
 	"github.com/ldez/go-git-cmd-wrapper/v2/revparse"
-	"os/exec"
 	"strings"
+	"task-runner/cmd"
 	"task-runner/config"
 )
 
@@ -23,7 +23,7 @@ func Release(release *config.Branch, cnf config.Yaml) error {
 				branchB = last
 			}
 			err := doRelease(strings.Trim(intermediate.Name, "\n"), branchB.Name, func() error {
-				return exec.Command(intermediate.Command.Main, intermediate.Command.Args...).Run()
+				return cmd.Handle(intermediate.Command)
 			}, intermediate.Amend)
 			if err != nil {
 				return err

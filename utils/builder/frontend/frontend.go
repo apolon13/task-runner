@@ -1,14 +1,13 @@
 package frontend
 
 import (
-	"bufio"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
-	"os/exec"
 	"strings"
 	"sync"
+	"task-runner/cmd"
 	"task-runner/config"
 	"time"
 )
@@ -18,16 +17,11 @@ type BuildParams struct {
 	Mode string
 }
 
-type command struct {
-	main string
-	args []string
-}
-
 type buildProcess struct {
-	dir     string
-	mode    string
-	wait    *sync.WaitGroup
-	command command
+	dir  string
+	mode string
+	wait *sync.WaitGroup
+	config.Command
 }
 
 func buildThreeComponentPath(a string, b string, c string) string {
@@ -64,10 +58,7 @@ func Do(bp BuildParams) {
 					replacedFullPath,
 					bp.Mode,
 					&waitGroup,
-					command{
-						main: bp.Cnf.Build.Frontend.Command.Main,
-						args: bp.Cnf.Build.Frontend.Command.Args,
-					},
+					bp.Cnf.Build.Frontend.Command,
 				}
 			}
 			if len(bp.Cnf.Build.Frontend.Recursive) > 0 {
@@ -97,45 +88,18 @@ func Do(bp BuildParams) {
 	log.Printf("Elapsed time for %s - %s", bp.Cnf.Build.Frontend.Root, elapsed)
 }
 
-func handlePrc(prc buildProcess, sem chan struct{}) {
+func handlePrc(prc buildProcess, sem chan struct{}) error {
 	sem <- struct{}{}
 	defer func() {
 		<-sem
 		prc.wait.Done()
 	}()
 	var args []string
-	for _, arg := range prc.command.args {
+	for _, arg := range prc.Command.Args {
 		arg = strings.ReplaceAll(arg, "${-mode}", prc.mode)
 		args = append(args, arg)
 	}
+	prc.Command.Args = args
 	args = append(args, prc.dir)
-	cmd := exec.Command(prc.command.main, args...)
-	if cmd.Stderr == nil {
-		cmdErrReader, err := cmd.StderrPipe()
-		errScanner := bufio.NewScanner(cmdErrReader)
-		if err != nil {
-			log.Fatal(err)
-		}
-		go func() {
-			for errScanner.Scan() {
-				fmt.Println("error: " + errScanner.Text())
-			}
-		}()
-	}
-
-	if cmd.Stdout == nil {
-		cmdOutReader, err := cmd.StdoutPipe()
-		if err != nil {
-			log.Fatal(err)
-		}
-		outScanner := bufio.NewScanner(cmdOutReader)
-		go func() {
-			for outScanner.Scan() {
-				fmt.Println(outScanner.Text())
-			}
-		}()
-	}
-	if err := cmd.Run(); err != nil {
-		log.Fatal(err)
-	}
+	return cmd.Handle(prc.Command)
 }

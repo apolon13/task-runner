@@ -66,7 +66,10 @@ func main() {
 			FileName:   *f,
 			Connection: client.Connection,
 		}
-		backup.Do(df, yamlFile, *db)
+		err := backup.Do(df, yamlFile, *db)
+		if err != nil {
+			log.Fatal(err)
+		}
 	case "build-frontend":
 		_ = buildFrontendCmd.Parse(os.Args[2:])
 		yamlFile := buildConfig(*buildFrontendCnf)
