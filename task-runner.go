@@ -79,7 +79,10 @@ func main() {
 		if branch == "current" {
 			branch, _ = gitUtil.CurrentBranch()
 		}
-		gitUtil.Release(&config.Branch{Name: strings.Trim(branch, "\n")}, buildConfig(*releaseCnf))
+		err := gitUtil.Release(&config.Branch{Name: strings.Trim(branch, "\n")}, buildConfig(*releaseCnf))
+		if err != nil {
+			log.Fatal(err)
+		}
 	case "-h":
 		fmt.Println("Usage: task-runner " + backupCmd.Name())
 		backupCmd.PrintDefaults()
