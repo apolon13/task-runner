@@ -100,7 +100,7 @@ func main() {
 			log.Fatal("Test stand missing")
 		}
 		gitUtil.Deploy(
-			&config.Branch{Name: branch},
+			&config.Branch{Name: strings.Trim(branch, "\n")},
 			*testStand)
 	case "-h":
 		fmt.Println("Usage: task-runner " + backupCmd.Name())
