@@ -1,0 +1,79 @@
+package main
+
+import (
+	"backup-downloader/config"
+	"backup-downloader/connection/ssh"
+	"backup-downloader/downloader/sftp"
+	"backup-downloader/utils/backup"
+	"backup-downloader/utils/builder/frontend"
+	"flag"
+	"fmt"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"log"
+	"os"
+)
+
+func buildConfig(path string) config.Yaml {
+	yamlFile := config.Yaml{}
+	configFile, err := ioutil.ReadFile(path)
+	if err != nil {
+		log.Fatal(fmt.Sprintf("config file not found: %s", err))
+	}
+	err = yaml.Unmarshal(configFile, &yamlFile)
+	if err != nil {
+		log.Fatal(fmt.Sprintf("unmarshal config file error: %s", err))
+	}
+	return yamlFile
+}
+
+func main() {
+	backupCmd := flag.NewFlagSet("backup", flag.ExitOnError)
+	backupCnf := backupCmd.String("cnf", "", "config file path")
+	f := backupCmd.String("f", "", "backup file name")
+	db := backupCmd.String("db", "", "database")
+
+	buildFrontendCmd := flag.NewFlagSet("build-frontend", flag.ExitOnError)
+	buildFrontendCnf := buildFrontendCmd.String("cnf", "", "config file path")
+	mode := buildFrontendCmd.String("mode", "production", "production or development")
+
+	switch os.Args[1] {
+	case "backup":
+		_ = backupCmd.Parse(os.Args[2:])
+		yamlFile := buildConfig(*backupCnf)
+		client := &ssh.Client{
+			Params: ssh.Params{
+				Username:   yamlFile.Connections.Ssh.Username,
+				Host:       yamlFile.Connections.Ssh.Host,
+				Port:       yamlFile.Connections.Ssh.Port,
+				PrivateKey: yamlFile.Connections.Ssh.PrivateKey,
+				Password:   yamlFile.Connections.Ssh.Password,
+			},
+		}
+		client.Connect()
+		defer client.Connection.Close()
+		df := &sftp.DownloadFile{
+			LocalPath:  yamlFile.Backup.Path.Local,
+			RemotePath: yamlFile.Backup.Path.Remote,
+			FileName:   *f,
+			Connection: client.Connection,
+		}
+		backup.Do(df, yamlFile, *db)
+	case "build-frontend":
+		_ = buildFrontendCmd.Parse(os.Args[2:])
+		yamlFile := buildConfig(*buildFrontendCnf)
+		frontend.Do(frontend.BuildParams{
+			Cnf: yamlFile,
+			Mode: *mode,
+		})
+	case "-h":
+		fmt.Println("Usage: task-runner " + backupCmd.Name())
+		backupCmd.PrintDefaults()
+		fmt.Println("Usage: task-runner " + buildFrontendCmd.Name())
+		buildFrontendCmd.PrintDefaults()
+		os.Exit(2)
+	default:
+		fmt.Println("Undefined subcommand")
+		os.Exit(1)
+	}
+}
