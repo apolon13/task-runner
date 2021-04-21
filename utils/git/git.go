@@ -23,6 +23,9 @@ func Release(release *config.Branch, cnf config.Yaml) error {
 				branchB = last
 			}
 			err := doRelease(strings.Trim(intermediate.Name, "\n"), branchB.Name, func() error {
+				if intermediate.Command.Main == "" {
+					return nil
+				}
 				return cmd.Handle(intermediate.Command)
 			}, intermediate.Amend)
 			if err != nil {
