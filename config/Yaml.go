@@ -1,5 +1,16 @@
 package config
 
+type Command struct {
+	Main string   `yaml:"main"`
+	Args []string `yaml:"args"`
+}
+
+type Branch struct {
+	Name    string  `yaml:"name"`
+	Amend   bool    `yaml:"amend"`
+	Command Command `yaml:"command"`
+}
+
 type Yaml struct {
 	Connections struct {
 		Ssh struct {
@@ -15,11 +26,8 @@ type Yaml struct {
 			Local  string `yaml:"local"`
 			Remote string `yaml:"remote"`
 		}
-		Command struct {
-			Main string   `yaml:"main"`
-			Args []string `yaml:"args"`
-		}
-		Remove bool `yaml:"remove"`
+		Command Command
+		Remove  bool `yaml:"remove"`
 	}
 	Build struct {
 		Frontend struct {
@@ -28,10 +36,10 @@ type Yaml struct {
 			Parallel    int      `yaml:"parallel"`
 			Recursive   []string `yaml:"recursive"`
 			CheckFile   string   `yaml:"check-file"`
-			Command     struct {
-				Main string   `yaml:"main"`
-				Args []string `yaml:"args"`
-			}
+			Command     Command
 		}
+	}
+	Git struct {
+		Intermediate []Branch `yaml:"intermediate"`
 	}
 }

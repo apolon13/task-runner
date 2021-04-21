@@ -12,6 +12,7 @@ import (
 	"task-runner/downloader/sftp"
 	"task-runner/utils/backup"
 	"task-runner/utils/builder/frontend"
+	gitUtil "task-runner/utils/git"
 )
 
 func buildConfig(path string) config.Yaml {
@@ -38,6 +39,10 @@ func main() {
 	buildFrontendCmd := flag.NewFlagSet("build-frontend", flag.ExitOnError)
 	buildFrontendCnf := buildFrontendCmd.String("cnf", defaultConfigFile, "config file path")
 	mode := buildFrontendCmd.String("mode", "production", "production or development")
+
+	releaseCmd := flag.NewFlagSet("release", flag.ExitOnError)
+	releaseBranch := releaseCmd.String("branch", "current", "release branch")
+	releaseCnf := releaseCmd.String("cnf", defaultConfigFile, "config file path")
 
 	switch os.Args[1] {
 	case "backup":
@@ -68,11 +73,20 @@ func main() {
 			Cnf:  yamlFile,
 			Mode: *mode,
 		})
+	case "release":
+		branch := *releaseBranch
+		if branch == "current" {
+			branch, _ = gitUtil.CurrentBranch()
+		}
+		fmt.Println(buildConfig(*releaseCnf))
+		gitUtil.Release(&config.Branch{Name: branch}, buildConfig(*releaseCnf))
 	case "-h":
 		fmt.Println("Usage: task-runner " + backupCmd.Name())
 		backupCmd.PrintDefaults()
 		fmt.Println("Usage: task-runner " + buildFrontendCmd.Name())
 		buildFrontendCmd.PrintDefaults()
+		fmt.Println("Usage: task-runner " + releaseCmd.Name())
+		releaseCmd.PrintDefaults()
 		os.Exit(2)
 	default:
 		fmt.Println("Undefined subcommand")
