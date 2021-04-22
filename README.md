@@ -99,9 +99,9 @@ backup:
         - local Путь на хост машине, куда будут загружены файлы
         - remote Путь на удаленном сервере с backup файлами
     - command Команда для запуска бекапа
-        - main Основная команда доступная в `$PATH`
+        - main Основная команда доступная в `$PATH` или путь к исп. файлу
         - args Аргументы
-    - remove удаление файла после выполнения команды
+    - remove Удаление файла после выполнения команды
     
 ###Build
 ````
@@ -128,12 +128,63 @@ build:
         - check-file Запускать сборку если в директории находится файл
         - root Корень обхода сборщиком
         - cut-exec-path Обрезать аргумент с названием директории (См. *)
-        - parallel
-        - command
-            - main
-            - args
+        - parallel Количество параллельных сборок
+        - command Команда сборки
+            - main yarn vs npm
+            - args Аргументы
         - recursive
     
 _*Команда при передаче на исполнение будет выглядеть yarn production /home/user/project/modules/lsystem,
 если нам необходимо передать только часть пути, мы можем указать cut-exec-path /home/user/project/modules/,
 таким образом команда будет выглядеть yarn production lsystem._
+
+###Git
+````
+git:
+  release:
+    intermediate:
+        - name: "test"
+          amend: true
+          command:
+              main: '/home/user/project/task-runner'
+              args: [
+                "build-frontend"
+              ]
+````
+- git
+    - release
+        - intermediate Если требуется держать несколько веток в состоянии master
+            - name Имя ветки
+            - amend Требуется ли делать commit amend после исполнения команды
+            - command Команда, которая будет выполнена на ветке name
+                - main Основная команда доступная в `$PATH` или путь к исп. файлу
+                - args Аргументы
+
+
+Команды и аргументы task-runner -h
+---------
+````
+Usage: task-runner backup
+  -cnf string
+        config file path (default "/home/user/project/config.yaml")
+  -db string
+        database
+  -f string
+        backup file name
+Usage: task-runner build-frontend
+  -cnf string
+        config file path (default "/home/user/project/config.yaml")
+  -mode string
+        production or development (default "production")
+Usage: task-runner release
+  -branch string
+        release branch (default "current")
+  -cnf string
+        config file path (default "/home/user/project/config.yaml")
+Usage: task-runner deploy
+  -branch string
+        deploy branch (default "current")
+  -stand string
+        test stand
+
+````
