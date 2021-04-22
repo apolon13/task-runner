@@ -102,3 +102,38 @@ backup:
         - main Основная команда доступная в `$PATH`
         - args Аргументы
     - remove удаление файла после выполнения команды
+    
+###Build
+````
+build:
+  frontend:
+    check-file: 'vue/app.js'
+    root: '/home/user/project/modules'
+    cut-exec-path: '/home/user/project/modules/'
+    parallel: 5
+    command:
+      main: 'yarn'
+      args: [
+          '--cwd',
+          '/home/user/project',
+          '${-mode}',
+          '-- --env.root'
+      ]
+    recursive: [
+        "modules"
+    ]
+````
+- build
+    - frontend
+        - check-file Запускать сборку если в директории находится файл
+        - root Корень обхода сборщиком
+        - cut-exec-path Обрезать аргумент с названием директории (См. *)
+        - parallel
+        - command
+            - main
+            - args
+        - recursive
+    
+_*Команда при передаче на исполнение будет выглядеть yarn production /home/user/project/modules/lsystem,
+если нам необходимо передать только часть пути, мы можем указать cut-exec-path /home/user/project/modules/,
+таким образом команда будет выглядеть yarn production lsystem._
