@@ -13,7 +13,7 @@
 - поместить бинарный файл в корень проекта
 - создать файл конфигурации config.yaml
 
-Настройка
+Файл конфигурации
 ---------
 
 Пример полного файла конфигурации:
@@ -70,3 +70,35 @@ git:
                 "build-frontend"
               ]
 ````
+
+Конфигурация отдельных компонентов
+---------
+
+###Backup
+````
+backup:
+  path:
+    local: /home/user/mysql/backup
+    remote: /var/mysql
+  command:
+    main: "docker"
+    args: [
+        "exec",
+        "-w",
+        "/var/mysql/backup",
+        "-i",
+        "mysql",
+        "/bin/bash",
+        "-c",
+        "zcat ${-f} | mysql -u user -ppass ${-db}"
+    ]
+  remove: false
+````
+- backup
+    - path
+        - local Путь на хост машине, куда будут загружены файлы
+        - remote Путь на удаленном сервере с backup файлами
+    - command Команда для запуска бекапа
+        - main Основная команда доступная в `$PATH`
+        - args Аргументы
+    - remove удаление файла после выполнения команды
