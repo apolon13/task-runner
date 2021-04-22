@@ -75,7 +75,7 @@ git:
 Конфигурация отдельных компонентов
 ---------
 
-### Backup
+### Restore
 
 ````
 restore:
@@ -101,7 +101,7 @@ restore:
     - db
         - path
             - local Путь на хост машине, куда будут загружены файлы
-            - remote Путь на удаленном сервере с backup файлами
+            - remote Путь на удаленном сервере с dump файлами
         - command Команда для запуска рестора
             - main Основная команда доступная в `$PATH` или путь к исп. файлу
             - args Аргументы
@@ -176,7 +176,7 @@ Usage: task-runner restore-db
   -db string
         database
   -f string
-        backup file name
+        dump file name
 Usage: task-runner build-frontend
   -cnf string
         config file path (default "/home/user/project/config.yaml")
