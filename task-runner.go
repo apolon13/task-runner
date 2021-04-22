@@ -11,9 +11,9 @@ import (
 	"task-runner/config"
 	"task-runner/connection/ssh"
 	"task-runner/downloader/sftp"
-	"task-runner/utils/backup"
 	"task-runner/utils/builder/frontend"
 	gitUtil "task-runner/utils/git"
+	db2 "task-runner/utils/restore/db"
 )
 
 func buildConfig(path string) config.Yaml {
@@ -32,9 +32,9 @@ func buildConfig(path string) config.Yaml {
 func main() {
 	wd, _ := os.Getwd()
 	defaultConfigFile := wd + "/config.yaml"
-	backupCmd := flag.NewFlagSet("backup", flag.ExitOnError)
+	backupCmd := flag.NewFlagSet("restore-db", flag.ExitOnError)
 	backupCnf := backupCmd.String("cnf", defaultConfigFile, "config file path")
-	f := backupCmd.String("f", "", "backup file name")
+	f := backupCmd.String("f", "", "restore file name")
 	db := backupCmd.String("db", "", "database")
 
 	buildFrontendCmd := flag.NewFlagSet("build-frontend", flag.ExitOnError)
@@ -50,7 +50,7 @@ func main() {
 	deployBranch := deployCmd.String("branch", "current", "deploy branch")
 
 	switch os.Args[1] {
-	case "backup":
+	case "restore-db":
 		_ = backupCmd.Parse(os.Args[2:])
 		yamlFile := buildConfig(*backupCnf)
 		client := &ssh.Client{
@@ -65,12 +65,12 @@ func main() {
 		client.Connect()
 		defer client.Connection.Close()
 		df := &sftp.DownloadFile{
-			LocalPath:  yamlFile.Backup.Path.Local,
-			RemotePath: yamlFile.Backup.Path.Remote,
+			LocalPath:  yamlFile.Restore.Db.Path.Local,
+			RemotePath: yamlFile.Restore.Db.Path.Remote,
 			FileName:   *f,
 			Connection: client.Connection,
 		}
-		err := backup.Do(df, yamlFile, *db)
+		err := db2.Do(df, yamlFile, *db)
 		if err != nil {
 			log.Fatal(err)
 		}

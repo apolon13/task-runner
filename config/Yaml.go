@@ -21,13 +21,15 @@ type Yaml struct {
 			PrivateKey string `yaml:"private_key"`
 		}
 	}
-	Backup struct {
-		Path struct {
-			Local  string `yaml:"local"`
-			Remote string `yaml:"remote"`
+	Restore struct {
+		Db struct {
+			Path struct {
+				Local  string `yaml:"local"`
+				Remote string `yaml:"remote"`
+			}
+			Command Command
+			Remove  bool `yaml:"remove"`
 		}
-		Command Command
-		Remove  bool `yaml:"remove"`
 	}
 	Build struct {
 		Frontend struct {

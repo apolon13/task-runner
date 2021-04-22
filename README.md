@@ -25,23 +25,24 @@ connections:
     port: 22
     password: ''
     private_key: 'id_rsa'
-backup:
-  path:
-    local: /home/user/mysql/backup
-    remote: /var/mysql
-  command:
-    main: "docker"
-    args: [
-        "exec",
-        "-w",
-        "/var/mysql/backup",
-        "-i",
-        "mysql",
-        "/bin/bash",
-        "-c",
-        "zcat ${-f} | mysql -u user -ppass ${-db}"
-    ]
-  remove: false
+restore:
+  db:
+    path:
+      local: /home/user/backup
+      remote: /var/mysql
+    command:
+      main: "docker"
+      args: [
+          "exec",
+          "-w",
+          "/var/mysql/backup",
+          "-i",
+          "mysql",
+          "/bin/bash",
+          "-c",
+          "zcat ${-f} | mysql -u root -papolon13 ${-db}"
+      ]
+    remove: false
 build:
   frontend:
     check-file: 'vue/app.js'
@@ -77,32 +78,34 @@ git:
 ### Backup
 
 ````
-backup:
-  path:
-    local: /home/user/mysql/backup
-    remote: /var/mysql
-  command:
-    main: "docker"
-    args: [
-        "exec",
-        "-w",
-        "/var/mysql/backup",
-        "-i",
-        "mysql",
-        "/bin/bash",
-        "-c",
-        "zcat ${-f} | mysql -u user -ppass ${-db}"
-    ]
-  remove: false
+restore:
+  db:
+    path:
+      local: /home/user/backup
+      remote: /var/mysql
+    command:
+      main: "docker"
+      args: [
+          "exec",
+          "-w",
+          "/var/mysql/backup",
+          "-i",
+          "mysql",
+          "/bin/bash",
+          "-c",
+          "zcat ${-f} | mysql -u root -papolon13 ${-db}"
+      ]
+    remove: false
 ````
-- backup
-    - path
-        - local Путь на хост машине, куда будут загружены файлы
-        - remote Путь на удаленном сервере с backup файлами
-    - command Команда для запуска бекапа
-        - main Основная команда доступная в `$PATH` или путь к исп. файлу
-        - args Аргументы
-    - remove Удаление файла после выполнения команды
+- restore
+    - db
+        - path
+            - local Путь на хост машине, куда будут загружены файлы
+            - remote Путь на удаленном сервере с backup файлами
+        - command Команда для запуска бекапа
+            - main Основная команда доступная в `$PATH` или путь к исп. файлу
+            - args Аргументы
+        - remove Удаление файла после выполнения команды
     
 ### Build
 
@@ -167,7 +170,7 @@ git:
 Команды и аргументы task-runner -h
 ---------
 ````
-Usage: task-runner backup
+Usage: task-runner restore-db
   -cnf string
         config file path (default "/home/user/project/config.yaml")
   -db string
