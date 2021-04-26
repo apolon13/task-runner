@@ -2,6 +2,7 @@ package git
 
 import (
 	"fmt"
+	"github.com/ldez/go-git-cmd-wrapper/v2/add"
 	"github.com/ldez/go-git-cmd-wrapper/v2/checkout"
 	"github.com/ldez/go-git-cmd-wrapper/v2/commit"
 	"github.com/ldez/go-git-cmd-wrapper/v2/git"
@@ -87,6 +88,7 @@ func doRelease(branchA string, branchB string, command func() error, amend bool)
 		panic(err)
 	}
 	if amend == true {
+		handleGitCommand(git.Add(add.All, git.Debug))
 		handleGitCommand(git.Commit(commit.Amend, commit.NoEdit, git.Debug))
 	}
 	handleGitCommand(git.Rebase(rebase.Branch(branchA), git.Debug))
