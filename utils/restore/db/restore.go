@@ -3,29 +3,29 @@ package db
 import (
 	"fmt"
 	"log"
-	"strings"
 	"task-runner/cmd"
-	"task-runner/config"
 	"task-runner/downloader/sftp"
 )
 
-func Do(df *sftp.DownloadFile, cnf config.Yaml, db string) error {
-	fmt.Println(fmt.Sprintf("Download file - %s", df.FileName))
-	df.Process()
+type Restore struct {
+	File    *sftp.DownloadFile
+	Command *cmd.Command
+	Remove  bool
+}
+
+func (r *Restore) Do() {
+	fmt.Println(fmt.Sprintf("Download file - %s", r.File.FileName))
+	r.File.Process()
 	fmt.Println("Downloading complete")
-	if cnf.Restore.Db.Remove == true {
+	if r.Remove == true {
 		defer func() {
-			if err := df.RemoveLocal(); err != nil {
+			if err := r.File.RemoveLocal(); err != nil {
 				log.Fatal(fmt.Errorf("error removing downloaded file: %s", err))
 			}
 		}()
 	}
-	var args []string
-	for _, arg := range cnf.Restore.Db.Command.Args {
-		arg = strings.ReplaceAll(arg, "${-f}", df.FileName)
-		arg = strings.ReplaceAll(arg, "${-db}", db)
-		args = append(args, arg)
+	err := r.Command.Run()
+	if err != nil {
+		log.Fatal(err)
 	}
-	cnf.Restore.Db.Command.Args = args
-	return cmd.Handle(cnf.Restore.Db.Command)
 }

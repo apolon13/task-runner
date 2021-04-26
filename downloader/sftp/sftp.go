@@ -3,16 +3,17 @@ package sftp
 import (
 	"fmt"
 	"github.com/pkg/sftp"
-	"golang.org/x/crypto/ssh"
 	"log"
 	"os"
+	"task-runner/config"
+	"task-runner/connection/ssh"
 )
 
 type DownloadFile struct {
-	LocalPath          string
+	LocalPath  string
 	RemotePath string
-	FileName               string
-	Connection             *ssh.Client
+	FileName   string
+	Client     *ssh.Client
 }
 
 func (df *DownloadFile) localFullPath() string {
@@ -33,7 +34,9 @@ func (df *DownloadFile) Process() {
 			log.Fatal(err)
 		}
 	}
-	sftpWrap, err := sftp.NewClient(df.Connection)
+	df.Client.Connect()
+	defer df.Client.Connection.Close()
+	sftpWrap, err := sftp.NewClient(df.Client.Connection)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -52,5 +55,14 @@ func (df *DownloadFile) Process() {
 
 	if _, err := remoteFile.WriteTo(localFile); err != nil {
 		panic(err)
+	}
+}
+
+func NewFile(cnf config.Yaml, filename string, client *ssh.Client) *DownloadFile {
+	return &DownloadFile{
+		LocalPath:  cnf.Restore.Db.Path.Local,
+		RemotePath: cnf.Restore.Db.Path.Remote,
+		FileName:   filename,
+		Client:     client,
 	}
 }

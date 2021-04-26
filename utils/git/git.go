@@ -13,7 +13,6 @@ import (
 	"github.com/ldez/go-git-cmd-wrapper/v2/revparse"
 	"github.com/ldez/go-git-cmd-wrapper/v2/types"
 	"strings"
-	"task-runner/cmd"
 	"task-runner/config"
 )
 
@@ -50,7 +49,7 @@ func Release(release *config.Branch, cnf config.Yaml) {
 					if intermediate.Command.Main == "" {
 						return nil
 					}
-					return cmd.Handle(intermediate.Command)
+					return intermediate.Command.Run()
 				}, intermediate.Amend)
 				last = &intermediate
 			}

@@ -3,8 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"gopkg.in/yaml.v2"
-	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -13,21 +11,9 @@ import (
 	"task-runner/downloader/sftp"
 	"task-runner/utils/builder/frontend"
 	gitUtil "task-runner/utils/git"
-	db2 "task-runner/utils/restore/db"
+	"task-runner/utils/grpc"
+	dbUtil "task-runner/utils/restore/db"
 )
-
-func buildConfig(path string) config.Yaml {
-	yamlFile := config.Yaml{}
-	configFile, err := ioutil.ReadFile(path)
-	if err != nil {
-		log.Fatal(fmt.Sprintf("config file not found: %s", err))
-	}
-	err = yaml.Unmarshal(configFile, &yamlFile)
-	if err != nil {
-		log.Fatal(fmt.Sprintf("unmarshal config file error: %s", err))
-	}
-	return yamlFile
-}
 
 func main() {
 	wd, _ := os.Getwd()
@@ -49,38 +35,63 @@ func main() {
 	testStand := deployCmd.String("stand", "", "test stand")
 	deployBranch := deployCmd.String("branch", "current", "deploy branch")
 
+	grpcCmd := flag.NewFlagSet("grpc", flag.ExitOnError)
+	pattern := grpcCmd.String("pattern", "", "<client or server>[:<service_name>]")
+	grpcCnf := grpcCmd.String("cnf", defaultConfigFile, "config file path")
+
 	switch os.Args[1] {
 	case "restore-db":
 		_ = backupCmd.Parse(os.Args[2:])
-		yamlFile := buildConfig(*backupCnf)
-		client := &ssh.Client{
-			Params: ssh.Params{
-				Username:   yamlFile.Connections.Ssh.Username,
-				Host:       yamlFile.Connections.Ssh.Host,
-				Port:       yamlFile.Connections.Ssh.Port,
-				PrivateKey: yamlFile.Connections.Ssh.PrivateKey,
-				Password:   yamlFile.Connections.Ssh.Password,
-			},
+		yamlFile := config.New(*backupCnf)
+		df := sftp.NewFile(yamlFile, *f, ssh.NewClient(yamlFile))
+		command := &yamlFile.Restore.Db.Command
+		command.ReplaceArgs(map[string]string{
+			"<-f>":  df.FileName,
+			"<-db>": *db,
+		})
+		restore := &dbUtil.Restore{
+			File:    df,
+			Command: command,
+			Remove:  yamlFile.Restore.Db.Remove,
 		}
-		client.Connect()
-		defer client.Connection.Close()
-		df := &sftp.DownloadFile{
-			LocalPath:  yamlFile.Restore.Db.Path.Local,
-			RemotePath: yamlFile.Restore.Db.Path.Remote,
-			FileName:   *f,
-			Connection: client.Connection,
-		}
-		err := db2.Do(df, yamlFile, *db)
-		if err != nil {
-			log.Fatal(err)
-		}
+		restore.Do()
 	case "build-frontend":
 		_ = buildFrontendCmd.Parse(os.Args[2:])
-		yamlFile := buildConfig(*buildFrontendCnf)
-		frontend.Do(frontend.BuildParams{
-			Cnf:  yamlFile,
-			Mode: *mode,
+		yamlFile := config.New(*buildFrontendCnf)
+		params := &yamlFile.Build.Frontend
+		params.Command.ReplaceArgs(map[string]string{
+			"<-mode>": *mode,
 		})
+		bp := &frontend.BuildProcess{
+			Mode:          *mode,
+			ProcessParams: params,
+		}
+		bp.Do()
+	case "grpc":
+		_ = grpcCmd.Parse(os.Args[2:])
+		yamlFile := config.New(*grpcCnf)
+		if *pattern == "" {
+			log.Fatal("Pattern missing")
+		}
+		typeAndService := strings.Split(*pattern, ":")
+		var params grpc.ProtocParams
+		switch typeAndService[0] {
+		case grpc.CompilationTypeClient:
+			params = yamlFile.GRPC.Client
+		case grpc.CompilationTypeServer:
+			params = yamlFile.GRPC.Server
+		default:
+			log.Fatal("Unknown compilation type")
+		}
+		var serviceName string
+		if cap(typeAndService) == 2 {
+			serviceName = typeAndService[1]
+		}
+		cp := &grpc.CompilationProcess{
+			ServiceName:  serviceName,
+			ProtocParams: params,
+		}
+		cp.Do()
 	case "release":
 		_ = releaseCmd.Parse(os.Args[2:])
 		branch := *releaseBranch
@@ -89,7 +100,7 @@ func main() {
 		}
 		gitUtil.Release(
 			&config.Branch{Name: strings.Trim(branch, "\n")},
-			buildConfig(*releaseCnf))
+			config.New(*releaseCnf))
 	case "deploy":
 		_ = deployCmd.Parse(os.Args[2:])
 		branch := *deployBranch
@@ -111,6 +122,8 @@ func main() {
 		releaseCmd.PrintDefaults()
 		fmt.Println("Usage: task-runner " + deployCmd.Name())
 		deployCmd.PrintDefaults()
+		fmt.Println("Usage: task-runner " + grpcCmd.Name())
+		grpcCmd.PrintDefaults()
 		os.Exit(2)
 	default:
 		fmt.Println("Undefined subcommand")

@@ -8,23 +8,24 @@ import (
 	"net"
 	"os"
 	"path"
+	"task-runner/config"
 	"time"
 )
 
 type Params struct {
-	Username           string
-	Host               string
-	Port               int
+	Username   string
+	Host       string
+	Port       int
 	PrivateKey string
-	Password           string
+	Password   string
 }
 
 type Client struct {
-	Params     Params
+	Params     *Params
 	Connection *ssh.Client
 }
 
-func (p Params) getPrivateKey() string {
+func (p *Params) getPrivateKey() string {
 	if p.PrivateKey != "" {
 		return p.PrivateKey
 	}
@@ -35,7 +36,7 @@ func (p Params) getPrivateKey() string {
 	return ""
 }
 
-func (p Params) readKeyFile() ([]byte, error) {
+func (p *Params) readKeyFile() ([]byte, error) {
 	key, err := ioutil.ReadFile(p.getPrivateKey())
 	if err != nil {
 		return nil, err
@@ -43,7 +44,7 @@ func (p Params) readKeyFile() ([]byte, error) {
 	return key, nil
 }
 
-func (client Client) authMethod() ([]ssh.AuthMethod, error) {
+func (client *Client) authMethod() ([]ssh.AuthMethod, error) {
 	if client.Params.Password != "" {
 		return []ssh.AuthMethod{ssh.Password(client.Params.Password)}, nil
 	}
@@ -63,7 +64,7 @@ func (client *Client) Connect() {
 	if err != nil {
 		log.Fatal(fmt.Errorf("auth method parsing error: %s", err))
 	}
-	config := &ssh.ClientConfig{
+	clientConfig := &ssh.ClientConfig{
 		User: client.Params.Username,
 		HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
 			return nil
@@ -72,8 +73,20 @@ func (client *Client) Connect() {
 		Timeout: 60 * time.Second,
 	}
 	addr := fmt.Sprintf("%s:%d", client.Params.Host, client.Params.Port)
-	client.Connection, err = ssh.Dial("tcp", addr, config)
+	client.Connection, err = ssh.Dial("tcp", addr, clientConfig)
 	if err != nil {
 		log.Fatal(fmt.Errorf("connection error: %s", err))
+	}
+}
+
+func NewClient(config config.Yaml) *Client {
+	return &Client{
+		Params: &Params{
+			Username:   config.Connections.Ssh.Username,
+			Host:       config.Connections.Ssh.Host,
+			Port:       config.Connections.Ssh.Port,
+			PrivateKey: config.Connections.Ssh.PrivateKey,
+			Password:   config.Connections.Ssh.Password,
+		},
 	}
 }

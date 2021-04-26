@@ -17,6 +17,7 @@
 ---------
 
 Пример полного файла конфигурации:
+
 ````
 connections:
   ssh:
@@ -40,9 +41,30 @@ restore:
           "mysql",
           "/bin/bash",
           "-c",
-          "zcat ${-f} | mysql -u root -papolon13 ${-db}"
+          "zcat <-f> | mysql -u root -papolon13 <-db>"
       ]
     remove: false
+grpc:
+  client:
+    root: '${CLIENT_PROTO_ROOT}'
+    plugin: '/usr/bin/grpc_php_plugin'
+    out: '${CLIENT_GENERATED}'
+    common: '${CLIENT_PROTO_ROOT}/common'
+    clear: [
+        '${CLIENT_GENERATED}/Airo/Proto/CleaningPlan',
+        '${CLIENT_GENERATED}/GPBMetadata/CleaningPlan',
+        '${CLIENT_GENERATED}/Airo/Proto/Common'
+    ]
+  server:
+    root: '${SERVER_PROTO_ROOT}'
+    plugin: '/usr/bin/protoc-gen-php-grpc'
+    out: '${SERVER_GENERATED}'
+    common: '${SERVER_PROTO_ROOT}/common'
+    clear: [
+        '${SERVER_GENERATED}/Airo/Proto/CleaningPlan',
+        '${SERVER_GENERATED}/GPBMetadata/CleaningPlan',
+        '${SERVER_GENERATED}/Airo/Common'
+    ]    
 build:
   frontend:
     check-file: 'vue/app.js'
@@ -54,7 +76,7 @@ build:
       args: [
           '--cwd',
           '/home/user/project',
-          '${-mode}',
+          '<-mode>',
           '-- --env.root'
       ]
     recursive: [
@@ -93,10 +115,11 @@ restore:
           "mysql",
           "/bin/bash",
           "-c",
-          "zcat ${-f} | mysql -u root -papolon13 ${-db}"
+          "zcat <-f> | mysql -u root -papolon13 <-db>"
       ]
     remove: false
 ````
+
 - restore
     - db
         - path
@@ -106,6 +129,40 @@ restore:
             - main Основная команда доступная в `$PATH` или путь к исп. файлу
             - args Аргументы
         - remove Удаление файла после выполнения команды
+
+### Grpc
+
+````
+grpc:
+  client:
+    root: '${CLIENT_PROTO_ROOT}'
+    plugin: '/usr/bin/grpc_php_plugin'
+    out: '${CLIENT_GENERATED}'
+    common: '${CLIENT_PROTO_ROOT}/common'
+    clear: [
+        '${CLIENT_GENERATED}/Airo/Proto/CleaningPlan',
+        '${CLIENT_GENERATED}/GPBMetadata/CleaningPlan',
+        '${CLIENT_GENERATED}/Airo/Proto/Common'
+    ]
+  server:
+    root: '${SERVER_PROTO_ROOT}'
+    plugin: '/usr/bin/protoc-gen-php-grpc'
+    out: '${SERVER_GENERATED}'
+    common: '${SERVER_PROTO_ROOT}/common'
+    clear: [
+        '${SERVER_GENERATED}/Airo/Proto/CleaningPlan',
+        '${SERVER_GENERATED}/GPBMetadata/CleaningPlan',
+        '${SERVER_GENERATED}/Airo/Common'
+    ]    
+````
+
+- grpc
+    - client
+        - root Корневой каталог proto интерфейсов
+        - plugin Плагин для генерации
+        - out Каталог куда будет записан результат 
+        - common Каталог с общими proto интерфейсами
+        - clear Список каталогов которые необходимо почистить перед запуском компилятора
     
 ### Build
 
@@ -121,13 +178,14 @@ build:
       args: [
           '--cwd',
           '/home/user/project',
-          '${-mode}',
+          '<-mode>',
           '-- --env.root'
       ]
     recursive: [
         "modules"
     ]
 ````
+
 - build
     - frontend
         - check-file Запускать сборку если в директории находится файл
@@ -138,10 +196,10 @@ build:
             - main yarn vs npm
             - args Аргументы
         - recursive
-    
-_*Команда при передаче на исполнение будет выглядеть yarn production /home/user/project/modules/lsystem,
-если нам необходимо передать только часть пути, мы можем указать cut-exec-path /home/user/project/modules/,
-таким образом команда будет выглядеть yarn production lsystem._
+
+_*Команда при передаче на исполнение будет выглядеть yarn production /home/user/project/modules/lsystem, если нам
+необходимо передать только часть пути, мы можем указать cut-exec-path /home/user/project/modules/, таким образом команда
+будет выглядеть yarn production lsystem._
 
 ### Git
 
@@ -157,6 +215,7 @@ git:
                 "build-frontend"
               ]
 ````
+
 - git
     - release
         - intermediate Если требуется держать несколько веток в состоянии master
@@ -166,9 +225,9 @@ git:
                 - main Основная команда доступная в `$PATH` или путь к исп. файлу
                 - args Аргументы
 
-
 Команды и аргументы task-runner -h
 ---------
+
 ````
 Usage: task-runner restore-db
   -cnf string
@@ -192,5 +251,10 @@ Usage: task-runner deploy
         deploy branch (default "current")
   -stand string
         test stand
+Usage: task-runner grpc
+  -cnf string
+        config file path (default "/home/user/project/config.yaml)
+  -pattern string
+        <client or server>[:<service_name>]
 
 ````

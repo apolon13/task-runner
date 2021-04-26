@@ -2,14 +2,19 @@ package cmd
 
 import (
 	"bufio"
-	"fmt"
+	"github.com/fatih/color"
 	"log"
 	"os/exec"
-	"task-runner/config"
+	"strings"
 )
 
-func Handle(command config.Command) error {
-	cmd := exec.Command(command.Main, command.Args...)
+type Command struct {
+	Main string   `yaml:"main"`
+	Args []string `yaml:"args"`
+}
+
+func (c *Command) Run() error {
+	cmd := exec.Command(c.Main, c.Args...)
 	if cmd.Stderr == nil {
 		cmdErrReader, err := cmd.StderrPipe()
 		errScanner := bufio.NewScanner(cmdErrReader)
@@ -18,7 +23,7 @@ func Handle(command config.Command) error {
 		}
 		go func() {
 			for errScanner.Scan() {
-				fmt.Println("error: " + errScanner.Text())
+				color.Red(errScanner.Text())
 			}
 		}()
 	}
@@ -31,9 +36,25 @@ func Handle(command config.Command) error {
 		outScanner := bufio.NewScanner(cmdOutReader)
 		go func() {
 			for outScanner.Scan() {
-				fmt.Println(outScanner.Text())
+				color.Blue(outScanner.Text())
 			}
 		}()
 	}
+	color.Green(cmd.String())
 	return cmd.Run()
+}
+
+func (c *Command) ReplaceArgs(args map[string]string) {
+	var newArgs []string
+	for _, arg := range c.Args {
+		for token, value := range args {
+			arg = strings.ReplaceAll(arg, token, value)
+		}
+		newArgs = append(newArgs, arg)
+	}
+	c.Args = newArgs
+}
+
+func (c *Command) AddArg(arg string) {
+	c.Args = append(c.Args, arg)
 }
