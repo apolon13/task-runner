@@ -8,6 +8,10 @@
     "issues": "https://jira.airo.ru/projects/IT/issues",
     "source": "https://gitlab.com/airollc/task-runner"
   },
+  "bin": [
+    "bin/task-runner",
+    "bin/task-runner.exe"
+  ],
   "authors": [
     {
       "name": "Anton Pankov",
