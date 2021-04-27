@@ -1,0 +1,17 @@
+{
+  "name": "airollc/task-runner",
+  "type": "project",
+  "license": "proprietary",
+  "description": "Airo task runner",
+  "homepage": "https://airo.ru",
+  "support": {
+    "issues": "https://jira.airo.ru/projects/IT/issues",
+    "source": "https://gitlab.com/airollc/task-runner"
+  },
+  "authors": [
+    {
+      "name": "Anton Pankov",
+      "email": "pankov@airo.ru"
+    }
+  ]
+}
