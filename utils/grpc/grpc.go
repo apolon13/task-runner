@@ -48,7 +48,7 @@ func (cp *CompilationProcess) Do() {
 	if cp.ProtocParams.Common != "" {
 		proto = append(proto, cp.findProto(cp.ProtocParams.Common)...)
 	}
-	cp.runProtoc(cp.findProto(pathToService))
+	cp.runProtoc(proto)
 }
 
 func (cp *CompilationProcess) findProto(root string) []string {
