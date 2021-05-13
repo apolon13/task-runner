@@ -17,3 +17,5 @@ task_runner_push:
     - echo "${CI_REGISTRY_PASSWORD}" | docker login ${CI_REGISTRY_IMAGE} --username ${CI_REGISTRY_PASSWORD} --password-stdin
   script:
     - docker push -t ${CI_REGISTRY_IMAGE}:latest
+
+    
