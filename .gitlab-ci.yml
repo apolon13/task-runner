@@ -14,7 +14,7 @@ task_runner_push:
   tags: 
     - "task-runner-shell"
   before_script:
-    - docker login ${CI_REGISTRY} -u ${CI_REGISTRY_PASSWORD} -p ${CI_REGISTRY_PASSWORD}
+    - - echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY -u gitlab-ci-token --password-stdin
   script:
     - docker push -t ${CI_REGISTRY_IMAGE}:latest
 
