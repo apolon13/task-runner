@@ -8,6 +8,8 @@ task_runner_build:
     - "task-runner-shell"
   script:
     - docker build -t ${CI_REGISTRY_IMAGE}:latest .
+  only:
+    - master
 
 task_runner_push:
   stage: push
@@ -17,4 +19,6 @@ task_runner_push:
     - - echo "$CI_JOB_TOKEN" | docker login $CI_REGISTRY -u gitlab-ci-token --password-stdin
   script:
     - docker push ${CI_REGISTRY_IMAGE}:latest
+  only:
+    - master
 
