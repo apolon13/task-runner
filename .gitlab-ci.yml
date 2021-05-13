@@ -1,0 +1,17 @@
+stages:
+  - build
+  - push
+
+task_runner_build:
+  stages: build
+  tags: task-runner-shell
+  script:
+    - docker build -t ${CI_REGISTRY_IMAGE}:latest .
+
+task_runner_pull:
+  stages: pull
+  tags: task-runner-shell
+  before_script:
+    - echo "${CI_REGISTRY_PASSWORD}" | docker login ${CI_REGISTRY_IMAGE} --username ${CI_REGISTRY_PASSWORD} --password-stdin
+  script:
+    - docker push -t ${CI_REGISTRY_IMAGE}:latest
