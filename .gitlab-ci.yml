@@ -14,8 +14,7 @@ task_runner_push:
   tags: 
     - "task-runner-shell"
   before_script:
-    - echo "${CI_REGISTRY_PASSWORD}" | docker login ${CI_REGISTRY_IMAGE} --username ${CI_REGISTRY_PASSWORD} --password-stdin
+    - docker login ${CI_REGISTRY} -u ${CI_REGISTRY_PASSWORD} -p ${CI_REGISTRY_PASSWORD}
   script:
     - docker push -t ${CI_REGISTRY_IMAGE}:latest
 
-    
