@@ -7,5 +7,5 @@ RUN go build -o bin/task-runner
 
 RUN cp bin/task-runner /usr/local/bin/
 
-RUN mkdir /var/www/merged
+RUN mkdir -p /var/www/merged
 WORKDIR /var/www/merged
