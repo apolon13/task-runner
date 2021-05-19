@@ -109,5 +109,6 @@ RUN /bin/bash -c "source $NVM_DIR/nvm.sh && nvm install $NODE_VERSION && nvm use
 ENV NODE_PATH $NVM_DIR/versions/node/$NODE_VERSION/lib/node_modules
 ENV PATH      $NVM_DIR/versions/node/$NODE_VERSION/bin:$PATH
 RUN npm install less -g
+RUN npm install -g yarn
 
 COPY --from=task_runner /go/src/app/bin/task-runner /usr/local/bin
