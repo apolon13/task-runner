@@ -112,6 +112,4 @@ RUN npm install less -g
 RUN npm install -g yarn
 RUN npm install -g cross-env
 
-COPY --from=task_runner /go/src/app/bin/task-runner /usr/local/bin
-
-USER gitlab-runner:gitlab-runner
+COPY --from=task_runner /go/src/app/bin/task-runner /usr/local/bin  
