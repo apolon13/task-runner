@@ -2,6 +2,7 @@ package frontend
 
 import (
 	"fmt"
+	"github.com/fatih/color"
 	"io/ioutil"
 	"log"
 	"os"
@@ -29,6 +30,7 @@ type process struct {
 	dir     string
 	wait    *sync.WaitGroup
 	command cmd.Command
+	mode    string
 }
 
 func buildThreeComponentPath(a string, b string, c string) string {
@@ -66,6 +68,7 @@ func (bp *BuildProcess) Do() {
 					replacedFullPath,
 					&waitGroup,
 					command,
+					bp.Mode,
 				}
 			}
 			if len(bp.ProcessParams.Recursive) > 0 {
@@ -101,12 +104,37 @@ func (bp *BuildProcess) Do() {
 	log.Printf("Elapsed time for %s - %s", rootDir, elapsed)
 }
 
-func handlePrc(prc process, sem chan struct{}) error {
+func handlePrc(prc process, sem chan struct{}) {
 	sem <- struct{}{}
 	defer func() {
 		<-sem
 		prc.wait.Done()
 	}()
 	prc.command.AddArg(prc.dir)
-	return prc.command.Run()
+	stdErr := make(chan string)
+	stdOut := make(chan string)
+	quit := make(chan struct{})
+	go func() {
+		err := prc.command.Run(stdErr, stdOut)
+		if err != nil {
+			log.Fatal(err)
+		}
+		quit <- struct{}{}
+	}()
+	for {
+		select {
+		case errString := <-stdErr:
+			switch prc.mode {
+			case "production":
+				color.Red(errString)
+				log.Fatal(fmt.Sprintf("Error in build %s", prc.command))
+			case "development":
+				color.Red(errString)
+			}
+		case outString := <-stdOut:
+			color.Blue(outString)
+		case <-quit:
+			return
+		}
+	}
 }

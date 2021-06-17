@@ -2,6 +2,7 @@ package db
 
 import (
 	"fmt"
+	"github.com/fatih/color"
 	"log"
 	"task-runner/cmd"
 	"task-runner/downloader/sftp"
@@ -24,8 +25,24 @@ func (r *Restore) Do() {
 			}
 		}()
 	}
-	err := r.Command.Run()
-	if err != nil {
-		log.Fatal(err)
+	stdErr := make(chan string)
+	stdOut := make(chan string)
+	quit := make(chan struct{})
+	go func() {
+		err := r.Command.Run(stdErr, stdOut)
+		if err != nil {
+			log.Fatal(err)
+		}
+		quit <- struct{}{}
+	}()
+	for {
+		select {
+		case errString := <-stdErr:
+			color.Red(errString)
+		case outString := <-stdOut:
+			color.Blue(outString)
+		case <-quit:
+			return
+		}
 	}
 }

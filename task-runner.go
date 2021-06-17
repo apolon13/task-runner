@@ -10,7 +10,6 @@ import (
 	"task-runner/connection/ssh"
 	"task-runner/downloader/sftp"
 	"task-runner/utils/builder/frontend"
-	gitUtil "task-runner/utils/git"
 	"task-runner/utils/grpc"
 	dbUtil "task-runner/utils/restore/db"
 )
@@ -26,14 +25,6 @@ func main() {
 	buildFrontendCmd := flag.NewFlagSet("build-frontend", flag.ExitOnError)
 	buildFrontendCnf := buildFrontendCmd.String("cnf", defaultConfigFile, "config file path")
 	mode := buildFrontendCmd.String("mode", "production", "production or development")
-
-	releaseCmd := flag.NewFlagSet("release", flag.ExitOnError)
-	releaseBranch := releaseCmd.String("branch", "current", "release branch")
-	releaseCnf := releaseCmd.String("cnf", defaultConfigFile, "config file path")
-
-	deployCmd := flag.NewFlagSet("deploy", flag.ExitOnError)
-	testStand := deployCmd.String("stand", "", "test stand")
-	deployBranch := deployCmd.String("branch", "current", "deploy branch")
 
 	grpcCmd := flag.NewFlagSet("grpc", flag.ExitOnError)
 	pattern := grpcCmd.String("pattern", "", "<client or server>[:<service_name>]")
@@ -92,36 +83,11 @@ func main() {
 			ProtocParams: params,
 		}
 		cp.Do()
-	case "release":
-		_ = releaseCmd.Parse(os.Args[2:])
-		branch := *releaseBranch
-		if branch == "current" {
-			branch, _ = gitUtil.CurrentBranch()
-		}
-		gitUtil.Release(
-			&config.Branch{Name: strings.Trim(branch, "\n")},
-			config.New(*releaseCnf))
-	case "deploy":
-		_ = deployCmd.Parse(os.Args[2:])
-		branch := *deployBranch
-		if branch == "current" {
-			branch, _ = gitUtil.CurrentBranch()
-		}
-		if *testStand == "" {
-			log.Fatal("Test stand missing")
-		}
-		gitUtil.Deploy(
-			&config.Branch{Name: strings.Trim(branch, "\n")},
-			*testStand)
 	case "-h":
 		fmt.Println("Usage: task-runner " + backupCmd.Name())
 		backupCmd.PrintDefaults()
 		fmt.Println("Usage: task-runner " + buildFrontendCmd.Name())
 		buildFrontendCmd.PrintDefaults()
-		fmt.Println("Usage: task-runner " + releaseCmd.Name())
-		releaseCmd.PrintDefaults()
-		fmt.Println("Usage: task-runner " + deployCmd.Name())
-		deployCmd.PrintDefaults()
 		fmt.Println("Usage: task-runner " + grpcCmd.Name())
 		grpcCmd.PrintDefaults()
 		os.Exit(2)

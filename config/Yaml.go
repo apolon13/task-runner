@@ -12,12 +12,6 @@ import (
 	"task-runner/utils/grpc"
 )
 
-type Branch struct {
-	Name    string      `yaml:"name"`
-	Amend   bool        `yaml:"amend"`
-	Command cmd.Command `yaml:"command"`
-}
-
 type Yaml struct {
 	Connections struct {
 		Ssh struct {
@@ -44,11 +38,6 @@ type Yaml struct {
 	GRPC struct {
 		Client grpc.ProtocParams
 		Server grpc.ProtocParams
-	}
-	Git struct {
-		Release struct {
-			Intermediate []Branch `yaml:"intermediate"`
-		}
 	}
 }
 

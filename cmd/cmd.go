@@ -13,7 +13,7 @@ type Command struct {
 	Args []string `yaml:"args"`
 }
 
-func (c *Command) Run() error {
+func (c *Command) Run(stderr chan<- string, stdout chan<- string) error {
 	cmd := exec.Command(c.Main, c.Args...)
 	if cmd.Stderr == nil {
 		cmdErrReader, err := cmd.StderrPipe()
@@ -23,7 +23,7 @@ func (c *Command) Run() error {
 		}
 		go func() {
 			for errScanner.Scan() {
-				color.Red(errScanner.Text())
+				stderr <- errScanner.Text()
 			}
 		}()
 	}
@@ -36,7 +36,7 @@ func (c *Command) Run() error {
 		outScanner := bufio.NewScanner(cmdOutReader)
 		go func() {
 			for outScanner.Scan() {
-				color.Blue(outScanner.Text())
+				stdout <- outScanner.Text()
 			}
 		}()
 	}
