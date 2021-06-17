@@ -4,14 +4,13 @@
 
 - Автоматизированные ресторы баз данных
 - Frontend сборку на основе npm или yaml
-- Release и Deploy скрипты с поддержкой промежуточных веток
 
 Установка
 ---------
 
 - загрузить bin файл https://gitlab.com/airollc/task-runner/-/tree/master/bin
 - поместить бинарный файл в корень проекта
-- создать файл конфигурации config.yaml
+- создать файл конфигурации tr.config.yaml
 
 Файл конфигурации
 ---------
@@ -82,16 +81,6 @@ build:
     recursive: [
         "modules"
     ]
-git:
-  release:
-    intermediate:
-        - name: "test"
-          amend: true
-          command:
-              main: '/home/user/project/task-runner'
-              args: [
-                "build-frontend"
-              ]
 ````
 
 Конфигурация отдельных компонентов
@@ -157,7 +146,7 @@ grpc:
 ````
 
 - grpc
-    - client
+    - client | server
         - root Корневой каталог proto интерфейсов
         - plugin Плагин для генерации
         - out Каталог куда будет записан результат 
@@ -201,30 +190,6 @@ _*Команда при передаче на исполнение будет в
 необходимо передать только часть пути, мы можем указать cut-exec-path /home/user/project/modules/, таким образом команда
 будет выглядеть yarn production lsystem._
 
-### Git
-
-````
-git:
-  release:
-    intermediate:
-        - name: "test"
-          amend: true
-          command:
-              main: '/home/user/project/task-runner'
-              args: [
-                "build-frontend"
-              ]
-````
-
-- git
-    - release
-        - intermediate Если требуется держать несколько веток в состоянии master
-            - name Имя ветки
-            - amend Требуется ли делать commit amend после исполнения команды
-            - command Команда, которая будет выполнена на ветке name
-                - main Основная команда доступная в `$PATH` или путь к исп. файлу
-                - args Аргументы
-
 Команды и аргументы task-runner -h
 ---------
 
@@ -241,16 +206,6 @@ Usage: task-runner build-frontend
         config file path (default "/home/user/project/config.yaml")
   -mode string
         production or development (default "production")
-Usage: task-runner release
-  -branch string
-        release branch (default "current")
-  -cnf string
-        config file path (default "/home/user/project/config.yaml")
-Usage: task-runner deploy
-  -branch string
-        deploy branch (default "current")
-  -stand string
-        test stand
 Usage: task-runner grpc
   -cnf string
         config file path (default "/home/user/project/config.yaml)

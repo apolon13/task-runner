@@ -82,13 +82,29 @@ func (cp *CompilationProcess) runProtoc(proto []string) {
 		Main: "protoc",
 		Args: append(args, proto...),
 	}
-	err := command.Run()
-	if err != nil {
-		log.Fatal(err)
-	}
+	stdErr := make(chan string)
+	stdOut := make(chan string)
+	quit := make(chan struct{})
+	go func() {
+		err := command.Run(stdErr, stdOut)
+		if err != nil {
+			log.Fatal(err)
+		}
+		quit <- struct{}{}
+	}()
 	green := color.New(color.FgGreen).SprintFunc()
 	bold := color.New(color.Bold).SprintFunc()
 	for _, filePath := range proto {
 		fmt.Println(green("•"), bold(filePath))
+	}
+	for {
+		select {
+		case errString := <-stdErr:
+			color.Red(errString)
+		case outString := <-stdOut:
+			color.Blue(outString)
+		case <-quit:
+			return
+		}
 	}
 }
