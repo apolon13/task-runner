@@ -3,9 +3,9 @@ package frontend
 import (
 	"fmt"
 	"github.com/fatih/color"
-	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"task-runner/cmd"
@@ -18,11 +18,10 @@ type BuildProcess struct {
 }
 
 type ProcessParams struct {
-	Root        string   `yaml:"root"`
-	CutExecPath string   `yaml:"cut-exec-path"`
-	Parallel    int      `yaml:"parallel"`
-	Recursive   []string `yaml:"recursive"`
-	CheckFile   string   `yaml:"check-file"`
+	Root        string `yaml:"root"`
+	CutExecPath string `yaml:"cut-exec-path"`
+	Parallel    int    `yaml:"parallel"`
+	CheckFile   string `yaml:"check-file"`
 	Command     cmd.Command
 }
 
@@ -33,63 +32,34 @@ type process struct {
 	mode    string
 }
 
-func buildThreeComponentPath(a string, b string, c string) string {
-	return fmt.Sprintf("%s/%s/%s", a, b, c)
-}
-
 func (bp *BuildProcess) Do() {
 	start := time.Now()
 	sem := make(chan struct{}, bp.ProcessParams.Parallel)
 	processChannels := make(chan process)
 	rootDir := bp.ProcessParams.Root
+	var modules []string
 	fmt.Println("root directory - " + rootDir)
-	files, err := ioutil.ReadDir(rootDir)
-	if err != nil {
-		log.Fatal(err)
-	}
-	var dirNames []string
-	for _, file := range files {
-		if file.IsDir() {
-			dirNames = append(dirNames, file.Name())
+	err := filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
+		if strings.Contains(path, bp.ProcessParams.CheckFile) && err == nil {
+			path = strings.ReplaceAll(path, "/"+bp.ProcessParams.CheckFile, "")
+			modules = append(modules, strings.ReplaceAll(path, bp.ProcessParams.CutExecPath, ""))
 		}
+		return err
+	})
+	if err != nil {
+		panic(err)
 	}
 	go func() {
 		var waitGroup sync.WaitGroup
-		for _, name := range dirNames {
-			filePath := buildThreeComponentPath(rootDir, name, bp.ProcessParams.CheckFile)
+		for _, module := range modules {
 			command := bp.ProcessParams.Command
-			if _, err := os.Stat(filePath); err == nil {
-				fmt.Println("add building process -" + name)
-				waitGroup.Add(1)
-				fp := rootDir + "/" + name
-				cutExec := bp.ProcessParams.CutExecPath
-				replacedFullPath := strings.ReplaceAll(fp, cutExec, "")
-				processChannels <- process{
-					replacedFullPath,
-					&waitGroup,
-					command,
-					bp.Mode,
-				}
-			}
-			if len(bp.ProcessParams.Recursive) > 0 {
-				for _, recursiveDir := range bp.ProcessParams.Recursive {
-					recursive := buildThreeComponentPath(rootDir, name, recursiveDir)
-					recursive = strings.ReplaceAll(recursive, recursiveDir+"/"+recursiveDir, recursiveDir)
-					if _, err := os.Stat(recursive); err == nil {
-						newBp := BuildProcess{
-							Mode: bp.Mode,
-							ProcessParams: &ProcessParams{
-								Root:        recursive,
-								CutExecPath: bp.ProcessParams.CutExecPath,
-								Parallel:    bp.ProcessParams.Parallel,
-								Recursive:   bp.ProcessParams.Recursive,
-								CheckFile:   bp.ProcessParams.CheckFile,
-								Command:     command,
-							},
-						}
-						newBp.Do()
-					}
-				}
+			fmt.Println("add building process -" + module)
+			waitGroup.Add(1)
+			processChannels <- process{
+				module,
+				&waitGroup,
+				command,
+				bp.Mode,
 			}
 		}
 		waitGroup.Wait()

@@ -5,17 +5,17 @@ import (
 	"github.com/fatih/color"
 	"log"
 	"task-runner/cmd"
-	"task-runner/downloader/sftp"
+	"task-runner/downloader/file"
 )
 
 type Restore struct {
-	File    *sftp.DownloadFile
+	File    file.DownloadFile
 	Command *cmd.Command
 	Remove  bool
 }
 
 func (r *Restore) Do() {
-	fmt.Println(fmt.Sprintf("Download file - %s", r.File.FileName))
+	fmt.Println(fmt.Sprintf("Download file - %s", r.File.GetFileName()))
 	r.File.Process()
 	fmt.Println("Downloading complete")
 	if r.Remove == true {

@@ -16,6 +16,10 @@ type DownloadFile struct {
 	Client     *ssh.Client
 }
 
+func (df *DownloadFile) GetFileName() string {
+	return df.FileName
+}
+
 func (df *DownloadFile) localFullPath() string {
 	return fmt.Sprintf("%s/%s", df.LocalPath, df.FileName)
 }
@@ -60,8 +64,8 @@ func (df *DownloadFile) Process() {
 
 func NewFile(cnf config.Yaml, filename string, client *ssh.Client) *DownloadFile {
 	return &DownloadFile{
-		LocalPath:  cnf.Restore.Db.Path.Local,
-		RemotePath: cnf.Restore.Db.Path.Remote,
+		LocalPath:  cnf.Restore.Db.Path.Ssh.Local,
+		RemotePath: cnf.Restore.Db.Path.Ssh.Remote,
 		FileName:   filename,
 		Client:     client,
 	}
