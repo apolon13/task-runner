@@ -21,12 +21,24 @@ type Yaml struct {
 			Password   string `yaml:"password"`
 			PrivateKey string `yaml:"private_key"`
 		}
+		S3 struct {
+			Id         string `yaml:"id"`
+			Key        string `yaml:"key"`
+			Entrypoint string `yaml:"entrypoint"`
+			Region     string `yaml:"region"`
+		}
 	}
 	Restore struct {
 		Db struct {
 			Path struct {
-				Local  string `yaml:"local"`
-				Remote string `yaml:"remote"`
+				Ssh struct {
+					Local  string `yaml:"local"`
+					Remote string `yaml:"remote"`
+				}
+				S3 struct {
+					Local  string `yaml:"local"`
+					Remote string `yaml:"remote"`
+				}
 			}
 			Command cmd.Command
 			Remove  bool `yaml:"remove"`

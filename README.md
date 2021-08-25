@@ -25,11 +25,20 @@ connections:
     port: 22
     password: ''
     private_key: 'id_rsa'
+  s3:
+    id: 'id'
+    key: 'secret'
+    entrypoint: 'storage.yandexcloud.net'
+    region: 'ru-central1'
 restore:
   db:
     path:
-      local: /home/user/backup
-      remote: /var/mysql
+      ssh:
+        local: /home/user/backup
+        remote: /var/mysql
+      s3:
+        local: /home/user/backup
+        remote: airo-backups
     command:
       main: "docker"
       args: [
@@ -78,9 +87,6 @@ build:
           '<-mode>',
           '-- --env.root'
       ]
-    recursive: [
-        "modules"
-    ]
 ````
 
 Конфигурация отдельных компонентов
@@ -92,8 +98,12 @@ build:
 restore:
   db:
     path:
-      local: /home/user/backup
-      remote: /var/mysql
+      ssh:
+        local: /home/user/backup
+        remote: /var/mysql
+      s3:
+        local: /home/user/backup
+        remote: airo-backups
     command:
       main: "docker"
       args: [
@@ -112,8 +122,12 @@ restore:
 - restore
     - db
         - path
-            - local Путь на хост машине, куда будут загружены файлы
-            - remote Путь на удаленном сервере с dump файлами
+           - ssh:
+              - local: /home/user/backup Путь на хост машине, куда будут загружены файлы
+              - remote: /var/mysql Путь на удаленном сервере с dump файлами 
+           - s3:
+              - local: /home/user/backup Путь на хост машине, куда будут загружены файлы
+              - remote: airo-backups bucket name
         - command Команда для запуска рестора
             - main Основная команда доступная в `$PATH` или путь к исп. файлу
             - args Аргументы
@@ -170,9 +184,6 @@ build:
           '<-mode>',
           '-- --env.root'
       ]
-    recursive: [
-        "modules"
-    ]
 ````
 
 - build
@@ -184,7 +195,6 @@ build:
         - command Команда сборки
             - main yarn vs npm
             - args Аргументы
-        - recursive
 
 _*Команда при передаче на исполнение будет выглядеть yarn production /home/user/project/modules/lsystem, если нам
 необходимо передать только часть пути, мы можем указать cut-exec-path /home/user/project/modules/, таким образом команда
@@ -196,19 +206,21 @@ _*Команда при передаче на исполнение будет в
 ````
 Usage: task-runner restore-db
   -cnf string
-        config file path (default "/home/user/project/config.yaml")
+        config file path (default "/home/apolon13/go/src/task-runner/config.yaml")
+  -con string
+        connection name (default "ssh")
   -db string
         database
   -f string
-        dump file name
+        restore file name
 Usage: task-runner build-frontend
   -cnf string
-        config file path (default "/home/user/project/config.yaml")
+        config file path (default "/home/apolon13/go/src/task-runner/config.yaml")
   -mode string
         production or development (default "production")
 Usage: task-runner grpc
   -cnf string
-        config file path (default "/home/user/project/config.yaml)
+        config file path (default "/home/apolon13/go/src/task-runner/config.yaml")
   -pattern string
         <client or server>[:<service_name>]
 

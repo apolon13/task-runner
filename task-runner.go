@@ -7,8 +7,11 @@ import (
 	"os"
 	"strings"
 	"task-runner/config"
-	"task-runner/connection/ssh"
-	"task-runner/downloader/sftp"
+	s3Connection "task-runner/connection/s3"
+	sshConnection "task-runner/connection/ssh"
+	"task-runner/downloader/file"
+	s3Downloader "task-runner/downloader/s3"
+	sftpDownloader "task-runner/downloader/sftp"
 	"task-runner/utils/builder/frontend"
 	"task-runner/utils/grpc"
 	dbUtil "task-runner/utils/restore/db"
@@ -21,6 +24,7 @@ func main() {
 	backupCnf := backupCmd.String("cnf", defaultConfigFile, "config file path")
 	f := backupCmd.String("f", "", "restore file name")
 	db := backupCmd.String("db", "", "database")
+	con := backupCmd.String("con", "ssh", "connection name")
 
 	buildFrontendCmd := flag.NewFlagSet("build-frontend", flag.ExitOnError)
 	buildFrontendCnf := buildFrontendCmd.String("cnf", defaultConfigFile, "config file path")
@@ -34,10 +38,20 @@ func main() {
 	case "restore-db":
 		_ = backupCmd.Parse(os.Args[2:])
 		yamlFile := config.New(*backupCnf)
-		df := sftp.NewFile(yamlFile, *f, ssh.NewClient(yamlFile))
+		var df file.DownloadFile
+		switch *con {
+		case "ssh":
+			df = sftpDownloader.NewFile(yamlFile, *f, sshConnection.NewClient(yamlFile))
+		case "s3":
+			df = s3Downloader.NewFile(yamlFile, *f, s3Connection.NewClient(yamlFile))
+		default:
+			fmt.Println("Undefined connection")
+			os.Exit(1)
+		}
+
 		command := &yamlFile.Restore.Db.Command
 		command.ReplaceArgs(map[string]string{
-			"<-f>":  df.FileName,
+			"<-f>":  df.GetFileName(),
 			"<-db>": *db,
 		})
 		restore := &dbUtil.Restore{
