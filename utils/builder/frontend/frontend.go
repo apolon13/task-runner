@@ -97,7 +97,6 @@ func handlePrc(prc process, sem chan struct{}) {
 			switch prc.mode {
 			case "production":
 				color.Red(errString)
-				log.Fatal(fmt.Sprintf("Error in build %s", prc.command))
 			case "development":
 				color.Red(errString)
 			}
