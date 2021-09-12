@@ -15,16 +15,17 @@ import (
 	"task-runner/utils/builder/frontend"
 	"task-runner/utils/grpc"
 	dbUtil "task-runner/utils/restore/db"
+	"task-runner/utils/services"
 )
 
 func main() {
 	wd, _ := os.Getwd()
 	defaultConfigFile := wd + "/config.yaml"
-	backupCmd := flag.NewFlagSet("restore-db", flag.ExitOnError)
-	backupCnf := backupCmd.String("cnf", defaultConfigFile, "config file path")
-	f := backupCmd.String("f", "", "restore file name")
-	db := backupCmd.String("db", "", "database")
-	con := backupCmd.String("con", "ssh", "connection name")
+	restoreCmd := flag.NewFlagSet("restore-db", flag.ExitOnError)
+	restoreCnf := restoreCmd.String("cnf", defaultConfigFile, "config file path")
+	f := restoreCmd.String("f", "", "restore file name")
+	db := restoreCmd.String("db", "", "database")
+	con := restoreCmd.String("con", "ssh", "connection name")
 
 	buildFrontendCmd := flag.NewFlagSet("build-frontend", flag.ExitOnError)
 	buildFrontendCnf := buildFrontendCmd.String("cnf", defaultConfigFile, "config file path")
@@ -34,10 +35,14 @@ func main() {
 	pattern := grpcCmd.String("pattern", "", "<client or server>[:<service_name>]")
 	grpcCnf := grpcCmd.String("cnf", defaultConfigFile, "config file path")
 
+	servicesInfoCmd := flag.NewFlagSet("services-info", flag.ExitOnError)
+	servicesInfoCnf := servicesInfoCmd.String("cnf", defaultConfigFile, "config file path")
+	servicesInfoFile := servicesInfoCmd.String("f", "", "export to file")
+
 	switch os.Args[1] {
 	case "restore-db":
-		_ = backupCmd.Parse(os.Args[2:])
-		yamlFile := config.New(*backupCnf)
+		_ = restoreCmd.Parse(os.Args[2:])
+		yamlFile := config.New(*restoreCnf)
 		var df file.DownloadFile
 		switch *con {
 		case "ssh":
@@ -97,13 +102,19 @@ func main() {
 			ProtocParams: params,
 		}
 		cp.Do()
+	case "services-info":
+		yamlFile := config.New(*servicesInfoCnf)
+		_ = servicesInfoCmd.Parse(os.Args[2:])
+		services.PrintInfo(sshConnection.NewClient(yamlFile), *servicesInfoFile)
 	case "-h":
-		fmt.Println("Usage: task-runner " + backupCmd.Name())
-		backupCmd.PrintDefaults()
+		fmt.Println("Usage: task-runner " + restoreCmd.Name())
+		restoreCmd.PrintDefaults()
 		fmt.Println("Usage: task-runner " + buildFrontendCmd.Name())
 		buildFrontendCmd.PrintDefaults()
 		fmt.Println("Usage: task-runner " + grpcCmd.Name())
 		grpcCmd.PrintDefaults()
+		fmt.Println("Usage: task-runner " + servicesInfoCmd.Name())
+		servicesInfoCmd.PrintDefaults()
 		os.Exit(2)
 	default:
 		fmt.Println("Undefined subcommand")
