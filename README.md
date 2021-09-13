@@ -223,5 +223,10 @@ Usage: task-runner grpc
         config file path (default "/home/apolon13/go/src/task-runner/config.yaml")
   -pattern string
         <client or server>[:<service_name>]
+Usage: task-runner services-info
+  -cnf string
+        config file path (default "/home/apolon13/go/src/task-runner/config.yaml")
+  -f string
+        export to file
 
 ````
