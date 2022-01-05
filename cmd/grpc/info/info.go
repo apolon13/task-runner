@@ -36,8 +36,8 @@ func init() {
 var (
 	Cmd = &cobra.Command{
 		Use:   "grpc-info",
-		Short: "grpc info",
-		Long:  "Show a table with available grps services.",
+		Short: "Grpc info",
+		Long:  "Show a table with available grpc services.",
 		Run: func(cmd *cobra.Command, args []string) {
 			sshClient := sshConnection.NewClient("grpc")
 			exportToFile, _ := cmd.Flags().GetString("export")

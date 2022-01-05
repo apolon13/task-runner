@@ -31,7 +31,12 @@ var (
 	Cmd = &cobra.Command{
 		Use:   "restore-db",
 		Short: "Restore you database",
-		Long:  "Automatic database download and restore. Use custom restore commands in you configuration.",
+		Long: `
+Automatic database download and restore. Use custom restore commands in you configuration.
+Available variables in commands:
+	<-f> - dump file name
+	<-db> - database name
+`,
 		Run: func(cmd *cobra.Command, args []string) {
 			var df file.DownloadFile
 

@@ -40,7 +40,14 @@ var (
 	Cmd = &cobra.Command{
 		Use:   "grpc-generate-proto",
 		Short: "Generate proto files",
-		Long:  "Generate airo proto files (client or server) from plugin",
+		Long: `
+Generate airo proto files (client or server) from plugin.
+Available variables in commands:
+	<-root> - root from config file
+	<-plugin> - plugin from config file
+	<-out> - out from config file
+	<-files> - found proto files
+`,
 		Run: func(cmd *cobra.Command, args []string) {
 			pattern, _ := cmd.Flags().GetString("pattern")
 			typeAndService := strings.Split(pattern, ":")

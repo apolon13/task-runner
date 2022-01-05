@@ -37,8 +37,13 @@ func init() {
 var (
 	Cmd = &cobra.Command{
 		Use:   "build-frontend",
-		Short: "vue frontend builder",
-		Long:  "parallel assembly of vue modules.",
+		Short: "Vue frontend builder",
+		Long: `
+Parallel assembly of vue modules.
+Available variables in commands:
+	<-mode> - build mode
+	<-module> - current module in process
+`,
 		Run: func(cmd *cobra.Command, args []string) {
 			mode, _ := cmd.Flags().GetString("mode")
 
