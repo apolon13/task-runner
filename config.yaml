@@ -1,0 +1,79 @@
+connections:
+  ssh:
+    db:
+      username: ${SSH_DB_USERNAME}
+      host: ${SSH_DB_HOST}
+      port: 22
+      password: ''
+      private-key: '${HOME}/.ssh/id_rsa'
+    grpc:
+      username: ${SSH_DOCKER_USERNAME}
+      host: ${SSH_DOCKER_HOST}
+      port: 22
+      password: ''
+      private-key: '${HOME}/.ssh/id_rsa'
+  s3:
+    db:
+      id: ${S3_ID}
+      key: ${S3_KEY}
+      entrypoint: 'storage.yandexcloud.net'
+      region: 'ru-central1'
+restore:
+  db:
+    path:
+      ssh:
+        local: ./temp
+        remote: /var/mysql
+      s3:
+        local: ./temp
+        remote: airo-backups
+    commands:
+      - main: "docker"
+        ignore-std-err: false
+        args: [
+            "exec",
+            "-w",
+            "/var/mysql/backup",
+            "-i",
+            "mysql",
+            "/bin/bash",
+            "-c",
+            "zcat <-f> | mysql -u ${MYSQL_USER} -p${MYSQL_PASS} <-db>"
+        ]
+      - main: "${PWD}/bin/task-runner"
+        args: [
+            "build-frontend"
+        ]
+    remove: true
+grpc:
+  client:
+    root: '${CLIENT_PROTO_ROOT}'
+    plugin: '/usr/bin/grpc_php_plugin'
+    out: '${CLIENT_GENERATED}'
+    common: '${CLIENT_PROTO_ROOT}/common'
+    clear: [
+    ]
+  server:
+    root: '${CLIENT_PROTO_ROOT}'
+    plugin: '/usr/bin/protoc-gen-php-grpc'
+    out: '${CLIENT_GENERATED}'
+    common: '${CLIENT_PROTO_ROOT}/common'
+    clear: [
+        "111"
+    ]
+build:
+  frontend:
+    check-file: 'vue/app.js'
+    root: '${CLIENT_ROOT}/modules'
+    cut-exec-path: '${CLIENT_ROOT}/modules/'
+    parallel: 4
+    commands:
+      - main: 'yarn'
+        ignore-std-err: true
+        args: [
+            '--cwd',
+            '${CLIENT_ROOT}/',
+            '<-mode>',
+            '-- --env.root',
+            '<-module>'
+        ]
