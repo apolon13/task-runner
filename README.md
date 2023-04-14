@@ -8,7 +8,7 @@
 Установка
 ---------
 
-- загрузить bin файл https://gitlab.com/airollc/task-runner/-/tree/master/bin
+- загрузить bin файл https://github.com/apolon13/task-runner/tree/master/bin
 - поместить бинарный файл в корень проекта
 - создать файл конфигурации tr.config.yaml
 
@@ -38,7 +38,7 @@ restore:
         remote: /var/mysql
       s3:
         local: /home/user/backup
-        remote: airo-backups
+        remote: backups
     command:
       main: "docker"
       args: [
@@ -49,7 +49,7 @@ restore:
           "mysql",
           "/bin/bash",
           "-c",
-          "zcat <-f> | mysql -u root -papolon13 <-db>"
+          "zcat <-f> | mysql -u root -ppassword <-db>"
       ]
     remove: false
 grpc:
@@ -59,9 +59,9 @@ grpc:
     out: '${CLIENT_GENERATED}'
     common: '${CLIENT_PROTO_ROOT}/common'
     clear: [
-        '${CLIENT_GENERATED}/Airo/Proto/CleaningPlan',
+        '${CLIENT_GENERATED}/Proto/CleaningPlan',
         '${CLIENT_GENERATED}/GPBMetadata/CleaningPlan',
-        '${CLIENT_GENERATED}/Airo/Proto/Common'
+        '${CLIENT_GENERATED}/Proto/Common'
     ]
   server:
     root: '${SERVER_PROTO_ROOT}'
@@ -69,9 +69,9 @@ grpc:
     out: '${SERVER_GENERATED}'
     common: '${SERVER_PROTO_ROOT}/common'
     clear: [
-        '${SERVER_GENERATED}/Airo/Proto/CleaningPlan',
+        '${SERVER_GENERATED}/Proto/CleaningPlan',
         '${SERVER_GENERATED}/GPBMetadata/CleaningPlan',
-        '${SERVER_GENERATED}/Airo/Common'
+        '${SERVER_GENERATED}/Common'
     ]    
 build:
   frontend:
@@ -103,7 +103,7 @@ restore:
         remote: /var/mysql
       s3:
         local: /home/user/backup
-        remote: airo-backups
+        remote: backups
     command:
       main: "docker"
       args: [
@@ -114,7 +114,7 @@ restore:
           "mysql",
           "/bin/bash",
           "-c",
-          "zcat <-f> | mysql -u root -papolon13 <-db>"
+          "zcat <-f> | mysql -u root -ppassword <-db>"
       ]
     remove: false
 ````
@@ -127,7 +127,7 @@ restore:
               - remote: /var/mysql Путь на удаленном сервере с dump файлами 
            - s3:
               - local: /home/user/backup Путь на хост машине, куда будут загружены файлы
-              - remote: airo-backups bucket name
+              - remote: backups bucket name
         - command Команда для запуска рестора
             - main Основная команда доступная в `$PATH` или путь к исп. файлу
             - args Аргументы
@@ -143,9 +143,9 @@ grpc:
     out: '${CLIENT_GENERATED}'
     common: '${CLIENT_PROTO_ROOT}/common'
     clear: [
-        '${CLIENT_GENERATED}/Airo/Proto/CleaningPlan',
+        '${CLIENT_GENERATED}/Proto/CleaningPlan',
         '${CLIENT_GENERATED}/GPBMetadata/CleaningPlan',
-        '${CLIENT_GENERATED}/Airo/Proto/Common'
+        '${CLIENT_GENERATED}/Proto/Common'
     ]
   server:
     root: '${SERVER_PROTO_ROOT}'
@@ -153,9 +153,9 @@ grpc:
     out: '${SERVER_GENERATED}'
     common: '${SERVER_PROTO_ROOT}/common'
     clear: [
-        '${SERVER_GENERATED}/Airo/Proto/CleaningPlan',
+        '${SERVER_GENERATED}/Proto/CleaningPlan',
         '${SERVER_GENERATED}/GPBMetadata/CleaningPlan',
-        '${SERVER_GENERATED}/Airo/Common'
+        '${SERVER_GENERATED}/Common'
     ]    
 ````
 
@@ -196,9 +196,9 @@ build:
             - main yarn vs npm
             - args Аргументы
 
-_*Команда при передаче на исполнение будет выглядеть yarn production /home/user/project/modules/lsystem, если нам
+_*Команда при передаче на исполнение будет выглядеть yarn production /home/user/project/modules/{{module-name}}, если нам
 необходимо передать только часть пути, мы можем указать cut-exec-path /home/user/project/modules/, таким образом команда
-будет выглядеть yarn production lsystem._
+будет выглядеть yarn production {{module-name}}._
 
 Команды и аргументы task-runner -h
 ---------
@@ -206,7 +206,7 @@ _*Команда при передаче на исполнение будет в
 ````
 Usage: task-runner restore-db
   -cnf string
-        config file path (default "/home/apolon13/go/src/task-runner/config.yaml")
+        config file path (default "config.yaml")
   -con string
         connection name (default "ssh")
   -db string
@@ -215,17 +215,17 @@ Usage: task-runner restore-db
         restore file name
 Usage: task-runner build-frontend
   -cnf string
-        config file path (default "/home/apolon13/go/src/task-runner/config.yaml")
+        config file path (default "config.yaml")
   -mode string
         production or development (default "production")
 Usage: task-runner grpc
   -cnf string
-        config file path (default "/home/apolon13/go/src/task-runner/config.yaml")
+        config file path (default "config.yaml")
   -pattern string
         <client or server>[:<service_name>]
 Usage: task-runner services-info
   -cnf string
-        config file path (default "/home/apolon13/go/src/task-runner/config.yaml")
+        config file path (default "config.yaml")
   -f string
         export to file
 
