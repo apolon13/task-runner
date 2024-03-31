@@ -131,11 +131,12 @@ func (process *findProcess) scan(semaphore *semaphore.Weighted, output chan proc
 	}
 
 	for _, item := range res {
+		fullPath := process.dir + "/" + item.Name()
 		if item.IsDir() {
 			process.wg.Add(1)
 			process.subProcesses <- &findProcess{
 				process.text,
-				process.dir + "/" + item.Name(),
+				fullPath,
 				process.findInFilename,
 				process.subProcesses,
 				process.wg,
@@ -144,7 +145,7 @@ func (process *findProcess) scan(semaphore *semaphore.Weighted, output chan proc
 			}
 		}
 
-		hasEntry, err := process.strategy.HasEntry(item.Name(), process.text)
+		hasEntry, err := process.strategy.HasEntry(fullPath, process.text)
 		if err != nil {
 			output <- processResult{"", err, "", false}
 		}
