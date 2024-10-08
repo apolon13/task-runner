@@ -42,6 +42,7 @@ func NewProcess(text string, dir string, searcher Searcher, renderer Renderer) P
 
 func (p Process) FindEntries(threads int) error {
 	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	errGroup, errorContext := errgroup.WithContext(ctx)
 	errGroup.SetLimit(threads)
 	files, err := scan(errorContext, p.dir)
@@ -83,30 +84,30 @@ func scan(ctx context.Context, root string) (chan processResult, chan error) {
 	errorChan := make(chan error)
 	go func() {
 		defer close(files)
+		defer close(errorChan)
 		filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-
-			if ctx.Err() != nil {
-				return nil
-			}
-
-			if err != nil {
-				if errors.Is(err, os.ErrPermission) {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+				if err != nil {
+					if errors.Is(err, os.ErrPermission) {
+						files <- processResult{
+							err.Error(),
+							path,
+							info.IsDir(),
+						}
+					} else {
+						errorChan <- err
+					}
+				} else {
 					files <- processResult{
-						err.Error(),
+						info.Name(),
 						path,
 						info.IsDir(),
 					}
-				} else {
-					errorChan <- err
-				}
-			} else {
-				files <- processResult{
-					info.Name(),
-					path,
-					info.IsDir(),
 				}
 			}
-
 			return nil
 		})
 	}()
